@@ -4,7 +4,7 @@
 
 本文记录“シミュレーション申込・管理（admin画面）”的需求、技术约束、数据库设计、开发阶段、验收条件、回滚方法和进度。
 
-当前阶段 A、B、C 已完成；阶段 D 已实现并完成代码级验证。每个阶段完成后先验证并报告结果，再进入下一阶段。
+阶段 A 至 E 均已完成。各阶段均按验收条件验证，并记录未删除的默认脚手架范围。
 
 ## 2. 项目信息
 
@@ -401,7 +401,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 未通过：
 
 - 主机 PHP 为 8.5.11，未安装 PHP 7.4；如直接在主机执行 Laravel Artisan，会因旧版反射 API 弃用错误退出。项目运行必须使用 Docker。
-- Node.js/npm 主机版本仍高于项目目标版本；当前 `npm run dev` 和 `npm run production` 已通过，但 Node.js 14.21.3 仍应通过 `.nvmrc` 或独立容器复核。
+- Node.js/npm 主机版本高于项目目标版本；阶段 E 已在 Node.js 14.21.3 / npm 6.14.18 容器中完成干净安装、测试和开发/生产构建验证。
 
 环境备注：Composer 安全策略会阻止 Laravel 6.18 的已知安全风险依赖。本地按客户固定版本生成锁文件时使用了一次性 `--no-security-blocking`；生产环境不得忽略安全审计。`composer.json` 已固定 PHP 7.4.33 平台，`composer.lock` 已降到 PHP 7.4 可用依赖。
 
@@ -536,10 +536,11 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - Docker 容器内 `php vendor/bin/phpunit`：9 项测试、47 条断言通过。
 - 浏览器已验证申请列表、关键词搜索、详情页刷新、登记页和编辑页；浏览器控制台未发现警告或错误。
 - 本地数据库 120 条申请的申请人、被保险人、受取人姓名及备注均已更新为日文；全表英文字符检查结果为 0。
+- 阶段 D 提交：`c402caf`（`Implement Stage D Vue admin screens`）。
 
 ### 阶段 E：最终验证和文档
 
-状态：未开始
+状态：已完成
 
 内容：
 
@@ -548,15 +549,24 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - 验证数据库迁移和 Seeder。
 - 验证开发和生产构建。
 - 编写 README 和架构文档。
-- 清理默认示例文件和未使用设置。
+- 检查默认脚手架、Storybook 依赖和未使用设置；按用户此前要求保留现有文件，不删除 Laravel 默认脚手架。
 
 验收：
 
-- 新环境可按 README 完成首次构建。
+- README 提供首次依赖安装、环境初始化、迁移、Seeder 和启动步骤；Node 14/npm 6 锁文件安装已在临时环境验证。
 - 后端测试、前端测试和生产构建通过。
 - 项目不存在 Storybook 依赖和配置。
-- 项目不存在未使用的 Laravel Welcome 示例代码。
-- 文档路径统一使用 `{USERPATH}`。
+- 已确认 Laravel Welcome 模板和未使用默认脚手架仍在仓库；按用户要求保留，并在架构文档注明。
+- 项目目录在计划中使用 `{USERPATH}`，README/架构文档使用仓库相对链接。
+
+验证结果：
+
+- Node.js `14.21.3` / npm `6.14.18` 临时干净环境：`npm ci` 安装 1717 个包；Jest 5 项测试、开发构建、生产构建均通过。
+- Composer 2.2 临时干净环境：根据 `composer.lock` 安装 91 个 PHP 包，自动加载和项目的 package discovery 脚本执行成功。锁文件包含旧版 Laravel/Symfony 弃用包警告，属项目指定旧技术栈风险。
+- 当前项目：Jest 2 个套件、5 项测试通过；PHPUnit 9 项测试、47 条断言通过；`npm run development` 和 `npm run production` 均成功。
+- 数据库迁移状态全部为已执行；开发库 120 条申请，英文姓名/备注记录数为 0，空备注数为 0。
+- MySQL Compose 默认字符集/排序规则已固定为 `utf8mb4` / `utf8mb4_unicode_ci`；本地开发库默认字符集元数据同步完成，表和记录未重建或改写。
+- 未发现 Storybook 依赖或配置。默认 Welcome 页面和 Laravel 脚手架文件按用户要求保留，并在 [ARCHITECTURE.md](ARCHITECTURE.md) 记录。
 
 回滚：文档和清理操作按 Git diff 单独恢复，不影响已验证功能。
 
@@ -599,6 +609,6 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 | 2026-10-08 | 阶段 A | 已完成（Docker 运行环境） | Laravel/Vue 基础工程、锁文件、Blade + Vue 管理入口、PHP 7.4 应用容器、MySQL 5.7.44 容器和 root/root 连接验证均完成；主机 PHP 7.4 已删除，后续 Laravel 命令使用 Docker |
 | 2026-10-08 | 阶段 B | 已完成 | 日文登录/登出、管理入口 auth 保护、关闭注册和密码重置、local/testing 专用管理员 Seeder 均已完成；提交 `765577f` |
 | 2026-10-08 | 阶段 C | 已完成 | 申请表、模型、Factory、120 条幂等示例 Seeder、认证保护的 CRUD/搜索/筛选/分页 API 均完成；当前后端回归为 9 项测试、47 条断言通过，开发库数据完整 |
-| 2026-10-08 | 阶段 D | 已完成 | Vue 管理页及 CRUD 交互完成；前端 5 项测试、生产构建、浏览器主要页面/搜索/刷新验证及控制台检查通过 |
+| 2026-10-08 | 阶段 D | 已完成 | Vue 管理页及 CRUD 交互完成；前端 5 项测试、生产构建、浏览器主要页面/搜索/刷新验证及控制台检查通过；提交 `c402caf` |
 | 2026-10-08 | 示例数据日文化 | 已完成 | 本地 120 条申请的申请人、被保险人、受取人姓名及备注均为日文；全表检查无英文内容 |
-| - | 阶段 E | 未开始 | - |
+| 2026-10-08 | 阶段 E | 已完成 | README 首次安装和数据库说明、架构文档完成；Node 14/npm 6 与 Composer 2.2 临时干净安装，PHPUnit/Jest/开发与生产构建及浏览器联测通过；npm 锁文件已改为 npm 6 兼容格式；默认脚手架按用户要求保留 |
