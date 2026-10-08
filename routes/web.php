@@ -16,5 +16,9 @@ Route::post('/login', 'Auth\\LoginController@login');
 Route::post('/logout', 'Auth\\LoginController@logout')->name('logout');
 
 Route::middleware('auth')->group(function () {
+    Route::prefix('admin/api/v1')->as('admin.api.v1.')->group(function () {
+        Route::apiResource('simulation-applications', 'Api\\SimulationApplicationController');
+    });
+
     Route::view('/admin/{path?}', 'admin')->where('path', '.*');
 });

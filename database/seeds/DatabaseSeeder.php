@@ -12,7 +12,10 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         if (app()->environment(['local', 'testing'])) {
-            $this->call(DevelopmentAdminSeeder::class);
+            $this->call([
+                DevelopmentAdminSeeder::class,
+                SimulationApplicationSeeder::class,
+            ]);
         }
     }
 }

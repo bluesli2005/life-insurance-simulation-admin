@@ -4,7 +4,7 @@
 
 本文记录“シミュレーション申込・管理（admin画面）”的需求、技术约束、数据库设计、开发阶段、验收条件、回滚方法和进度。
 
-当前已完成阶段 A 的基础工程和 Docker 运行环境；业务功能阶段尚未开始。每个阶段完成后先验证并报告结果，再进入下一阶段。
+当前阶段 A、B、C 已完成。每个阶段完成后先验证并报告结果，再进入下一阶段。
 
 ## 2. 项目信息
 
@@ -456,7 +456,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 
 ### 阶段 C：数据库和后端
 
-状态：未开始
+状态：已完成
 
 内容：
 
@@ -477,6 +477,23 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - Laravel 测试通过。
 
 回滚：回滚业务 migration，移除业务 API 和模型；认证功能保留。
+
+已实现：
+
+- 按第 9 节字段定义建立 `simulation_applications` migration、Model 和 Factory。
+- 增加 120 条本地/测试示例申请，五种状态各 24 条；Seeder 使用 `firstOrCreate`，重复运行不重复插入或覆盖现有申请。
+- 增加认证保护的同源 REST API、Form Request、JSON Resource，支持 CRUD、关键词搜索、状态筛选和白名单分页。
+- 业务 API 放在 Web Session/CSRF 中间件组中，和管理页面共用登录态。
+- 增加 Feature Test；测试使用单独的 `laravel_testing` MySQL 数据库，避免触碰开发数据。
+
+验证结果：
+
+- 开发库中管理员 1 个、申请 120 条，五种状态各 24 条。
+- API 未登录返回 401；登录后可以 CRUD，未找到记录返回 JSON 404，非法数据和分页参数返回 422。
+- Seeder 重复执行不增加记录，也不覆盖已编辑的申请。
+- `php artisan route:list` 显示全部业务 API 使用 `web,auth` 中间件。
+- `php vendor/bin/phpunit` 完整套件：9 项测试、46 条断言通过。
+- 独立 `laravel_testing` 数据库完成迁移，开发库仍保留 1 个管理员和 120 条申请。
 
 ### 阶段 D：Vue 管理页面
 
@@ -563,7 +580,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 | 2026-10-08 | 需求收敛 | 已完成 | 技术版本、业务范围、认证、数据库、日文界面和 Storybook 方针已确认 |
 | 2026-10-08 | 开发计划 | 已完成 | 已生成本文档并按阶段 A 实施 |
 | 2026-10-08 | 阶段 A | 已完成（Docker 运行环境） | Laravel/Vue 基础工程、锁文件、Blade + Vue 管理入口、PHP 7.4 应用容器、MySQL 5.7.44 容器和 root/root 连接验证均完成；主机 PHP 7.4 已删除，后续 Laravel 命令使用 Docker |
-| 2026-10-08 | 阶段 B | 已完成 | 日文登录/登出、管理入口 auth 保护、关闭注册和密码重置、local/testing 专用管理员 Seeder 均已完成；HTTP 路由与前端生产构建验证通过 |
-| - | 阶段 C | 未开始 | - |
+| 2026-10-08 | 阶段 B | 已完成 | 日文登录/登出、管理入口 auth 保护、关闭注册和密码重置、local/testing 专用管理员 Seeder 均已完成；提交 `765577f` |
+| 2026-10-08 | 阶段 C | 已完成 | 申请表、模型、Factory、120 条幂等示例 Seeder、认证保护的 CRUD/搜索/筛选/分页 API 均完成；PHPUnit 9 项测试和 46 条断言通过，开发库数据完整 |
 | - | 阶段 D | 未开始 | - |
 | - | 阶段 E | 未开始 | - |

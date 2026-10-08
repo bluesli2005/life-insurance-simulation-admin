@@ -29,6 +29,17 @@ npm run dev
 npm run production
 ```
 
+### 后端测试
+
+测试使用独立的 MySQL 数据库，不会清理 `laravel` 开发库：
+
+```sh
+docker compose exec -T mysql mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS laravel_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+docker compose exec -T app php vendor/bin/phpunit
+```
+
+Seeder 在 `local`、`testing` 环境为每种状态创建 24 条申请示例数据。
+
 <!-- Laravel framework template content below is retained until project documentation consolidation. -->
 
 <p align="center">
