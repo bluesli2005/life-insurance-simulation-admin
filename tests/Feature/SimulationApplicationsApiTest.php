@@ -114,18 +114,22 @@ class SimulationApplicationsApiTest extends TestCase
         $this->getJson('/admin/api/v1/simulation-applications/999')->assertNotFound();
     }
 
-    public function test_sample_seeder_is_repeatable_and_does_not_overwrite_existing_rows()
+    public function test_sample_seeder_is_repeatable_and_refreshes_japanese_sample_text()
     {
         $this->seed('SimulationApplicationSeeder');
         $this->assertSame(120, SimulationApplication::count());
 
         $application = SimulationApplication::where('application_number', 'SIM-2026-0001')->firstOrFail();
-        $application->update(['notes' => '利用者が更新した内容']);
+        $application->update([
+            'notes' => '利用者による備考変更',
+            'coverage_amount' => 1234567.89,
+        ]);
 
         $this->seed('SimulationApplicationSeeder');
 
         $this->assertSame(120, SimulationApplication::count());
-        $this->assertSame('利用者が更新した内容', $application->fresh()->notes);
+        $this->assertSame('申込書類を受領し、内容を確認しています。', $application->fresh()->notes);
+        $this->assertSame(1234567.89, (float) $application->fresh()->coverage_amount);
         $this->assertSame(24, SimulationApplication::where('status', 'draft')->count());
         $this->assertSame(24, SimulationApplication::where('status', 'cancelled')->count());
     }

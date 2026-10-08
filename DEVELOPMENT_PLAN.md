@@ -4,7 +4,7 @@
 
 本文记录“シミュレーション申込・管理（admin画面）”的需求、技术约束、数据库设计、开发阶段、验收条件、回滚方法和进度。
 
-当前阶段 A、B、C 已完成。每个阶段完成后先验证并报告结果，再进入下一阶段。
+当前阶段 A、B、C 已完成；阶段 D 已实现并完成代码级验证。每个阶段完成后先验证并报告结果，再进入下一阶段。
 
 ## 2. 项目信息
 
@@ -481,7 +481,8 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 已实现：
 
 - 按第 9 节字段定义建立 `simulation_applications` migration、Model 和 Factory。
-- 增加 120 条本地/测试示例申请，五种状态各 24 条；Seeder 使用 `firstOrCreate`，重复运行不重复插入或覆盖现有申请。
+- 增加 120 条本地/测试示例申请，五种状态各 24 条；Seeder 使用 `firstOrCreate` 防止重复插入，重复执行时只刷新标准示例的日文姓名和备注，保留其他申请字段。
+- 示例申请姓名和备注使用日文；Faker 区域设置为 `ja_JP`，重跑本地 Seeder 会将既有 120 条标准示例申请的申请人、被保险人、受取人姓名及备注更新为日文。
 - 增加认证保护的同源 REST API、Form Request、JSON Resource，支持 CRUD、关键词搜索、状态筛选和白名单分页。
 - 业务 API 放在 Web Session/CSRF 中间件组中，和管理页面共用登录态。
 - 增加 Feature Test；测试使用单独的 `laravel_testing` MySQL 数据库，避免触碰开发数据。
@@ -490,14 +491,14 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 
 - 开发库中管理员 1 个、申请 120 条，五种状态各 24 条。
 - API 未登录返回 401；登录后可以 CRUD，未找到记录返回 JSON 404，非法数据和分页参数返回 422。
-- Seeder 重复执行不增加记录，也不覆盖已编辑的申请。
+- Seeder 重复执行不增加记录；标准示例姓名和备注统一刷新为日文，其他业务字段保持不变。
 - `php artisan route:list` 显示全部业务 API 使用 `web,auth` 中间件。
 - `php vendor/bin/phpunit` 完整套件：9 项测试、46 条断言通过。
 - 独立 `laravel_testing` 数据库完成迁移，开发库仍保留 1 个管理员和 120 条申请。
 
 ### 阶段 D：Vue 管理页面
 
-状态：未开始
+状态：已完成
 
 内容：
 
@@ -519,6 +520,22 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - Vue 测试和生产构建通过。
 
 回滚：移除 Vue 业务页面和业务 store，后端 API 与登录功能保留。
+
+已实现：
+
+- 配置 Vue Router、Vuex 和同源 Axios API 客户端。
+- 新增表格、按钮、输入框、选择框、文本域、字段错误和加载/错误/空状态等通用组件。
+- 实现日文申请一览、详情、登记和编辑页面；支持删除确认、搜索、状态筛选、分页和每页条数。
+- 搜索仅在提交搜索表单时发起请求；新增/编辑表单展示后端字段校验错误。
+- 增加 Jest/Vue Test Utils 测试配置和前端组件/列表交互测试。
+
+代码级验证结果：
+
+- `npm test -- --watchAll=false`：2 个测试套件、5 项测试通过。
+- `npm run production`：Laravel Mix 生产构建成功。
+- Docker 容器内 `php vendor/bin/phpunit`：9 项测试、47 条断言通过。
+- 浏览器已验证申请列表、关键词搜索、详情页刷新、登记页和编辑页；浏览器控制台未发现警告或错误。
+- 本地数据库 120 条申请的申请人、被保险人、受取人姓名及备注均已更新为日文；全表英文字符检查结果为 0。
 
 ### 阶段 E：最终验证和文档
 
@@ -581,6 +598,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 | 2026-10-08 | 开发计划 | 已完成 | 已生成本文档并按阶段 A 实施 |
 | 2026-10-08 | 阶段 A | 已完成（Docker 运行环境） | Laravel/Vue 基础工程、锁文件、Blade + Vue 管理入口、PHP 7.4 应用容器、MySQL 5.7.44 容器和 root/root 连接验证均完成；主机 PHP 7.4 已删除，后续 Laravel 命令使用 Docker |
 | 2026-10-08 | 阶段 B | 已完成 | 日文登录/登出、管理入口 auth 保护、关闭注册和密码重置、local/testing 专用管理员 Seeder 均已完成；提交 `765577f` |
-| 2026-10-08 | 阶段 C | 已完成 | 申请表、模型、Factory、120 条幂等示例 Seeder、认证保护的 CRUD/搜索/筛选/分页 API 均完成；PHPUnit 9 项测试和 46 条断言通过，开发库数据完整 |
-| - | 阶段 D | 未开始 | - |
+| 2026-10-08 | 阶段 C | 已完成 | 申请表、模型、Factory、120 条幂等示例 Seeder、认证保护的 CRUD/搜索/筛选/分页 API 均完成；当前后端回归为 9 项测试、47 条断言通过，开发库数据完整 |
+| 2026-10-08 | 阶段 D | 已完成 | Vue 管理页及 CRUD 交互完成；前端 5 项测试、生产构建、浏览器主要页面/搜索/刷新验证及控制台检查通过 |
+| 2026-10-08 | 示例数据日文化 | 已完成 | 本地 120 条申请的申请人、被保险人、受取人姓名及备注均为日文；全表检查无英文内容 |
 | - | 阶段 E | 未开始 | - |

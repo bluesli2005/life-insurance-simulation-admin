@@ -21,6 +21,71 @@ docker compose exec app php artisan db:seed --force
 
 默认管理员为 `admin@example.com` / `password`。可通过 `.env` 中的 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 覆盖。Seeder 只在 `local`、`testing` 环境运行，示例凭据不得用于生产环境。
 
+### 数据库构造
+
+#### 数据库连接
+
+Docker Compose 首次启动时会创建 MySQL 5.7.44 数据库：
+
+| 配置项 | 开发数据库 |
+| --- | --- |
+| 数据库名 | `laravel` |
+| 用户名 / 密码 | `root` / `root` |
+| 字符集 | `utf8mb4` |
+| 应用容器连接地址 | `mysql:3306` |
+| 本机连接地址 | `127.0.0.1:3306` |
+
+MySQL 数据保存在 Docker 命名卷 `mysql57_data` 中。停止或重建容器不会删除该卷；不要使用 `docker compose down -v`，除非确认要永久删除本地数据库。
+
+#### 数据表
+
+Laravel Migration 管理表结构。首次构建后执行迁移和 Seeder：
+
+```sh
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan db:seed --force
+```
+
+主要业务表 `simulation_applications` 保存保险模拟申请，字段如下：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | BIGINT | 主键 |
+| `application_number` | VARCHAR(50) | 申込番号，唯一 |
+| `applicant_name` | VARCHAR(100) | 申込者氏名（日文示例姓名） |
+| `insured_name` | VARCHAR(100) | 被保険者氏名（日文示例姓名） |
+| `insured_birth_date` | DATE | 被保険者生年月日 |
+| `beneficiary_name` | VARCHAR(100)，可空 | 受取人氏名 |
+| `coverage_amount` | DECIMAL(15,2) | 保険金額 |
+| `premium_amount` | DECIMAL(15,2) | 保険料 |
+| `currency` | CHAR(3) | 通貨，默认 `JPY` |
+| `status` | VARCHAR(20) | 状态：`draft`、`submitted`、`approved`、`rejected`、`cancelled` |
+| `effective_date` | DATE | 适用开始日 |
+| `expiry_date` | DATE，可空 | 适用结束日 |
+| `notes` | TEXT，可空 | 备注 |
+| `created_at` / `updated_at` | TIMESTAMP | 创建、更新时间 |
+
+此外，Laravel 使用 `users` 保存管理员账号，`password_resets` 保存密码重置令牌，`failed_jobs` 保存失败队列任务；`migrations` 由 Laravel 自动维护迁移记录。业务申请按 `status`、`effective_date` 建立联合索引。
+
+默认 Seeder 会创建或补齐 1 个本地管理员，以及 120 条示例申请（五种状态各 24 条）。示例申请姓名和备注为日文，Faker 区域为 `ja_JP`。重复运行会保留既有申请的其他业务字段，并将标准示例申请的姓名和备注更新为日文。Seeder 仅在 `local`、`testing` 环境执行。
+
+查看迁移状态和表结构：
+
+```sh
+docker compose exec app php artisan migrate:status
+docker compose exec mysql mysql -uroot -proot laravel -e 'SHOW TABLES; DESCRIBE simulation_applications;'
+```
+
+测试使用独立数据库 `laravel_testing`，不会清理开发库。创建测试库及运行迁移/测试：
+
+```sh
+docker compose exec -T mysql mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS laravel_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+docker compose exec -e APP_ENV=testing -e DB_DATABASE=laravel_testing app php artisan migrate --force
+docker compose exec -T app php vendor/bin/phpunit
+```
+
+PHPUnit 配置会自动连接 `laravel_testing`，并在测试中刷新该库。请勿将测试环境变量改指向 `laravel` 开发数据库。
+
 ### 前端构建
 
 ```sh
