@@ -417,12 +417,12 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 
 ### 阶段 B：登录功能
 
-状态：未开始
+状态：已完成
 
 内容：
 
-- 安装 Laravel UI 1.x。
-- 生成 Vue 和认证基础。
+- 安装 Laravel UI 1.x（锁定 1.3.0）。
+- 复用项目已有认证 Controller 和阶段 A 的 Vue 基础，不重复生成脚手架。
 - 删除注册和密码重置入口。
 - 日文化登录页面和错误消息。
 - 创建管理员 Seeder。
@@ -436,6 +436,23 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - 默认管理员只能在本地和测试环境使用。
 
 回滚：移除认证路由和脚手架，保留阶段 A 基础项目。
+
+已完成：
+
+- 增加日文登录页、登录/登出路由和表单验证提示。
+- Composer 开发依赖已安装 Laravel UI 1.3.0。
+- `/admin/*` 管理入口通过 `auth` 中间件保护，未登录访问跳转到 `/login`。
+- 未启用注册和密码重置；对应页面返回 404。
+- 增加开发管理员 Seeder，只允许在 `local` 和 `testing` 环境执行，支持 `ADMIN_EMAIL`、`ADMIN_PASSWORD` 环境变量；示例账号为 `admin@example.com` / `password`，仅限本地环境。
+- 默认语言设为日文。
+
+验证结果：
+
+- 数据库迁移和默认开发管理员 Seeder 成功。
+- `/login` 返回 200；未登录访问 `/admin/applications` 返回 302 并跳转 `/login`。
+- `/register` 和 `/password/reset` 返回 404。
+- `php artisan route:list` 确认 `/admin/{path?}` 使用 `web,auth` 中间件。
+- `npm run production` 成功。
 
 ### 阶段 C：数据库和后端
 
@@ -546,7 +563,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 | 2026-10-08 | 需求收敛 | 已完成 | 技术版本、业务范围、认证、数据库、日文界面和 Storybook 方针已确认 |
 | 2026-10-08 | 开发计划 | 已完成 | 已生成本文档并按阶段 A 实施 |
 | 2026-10-08 | 阶段 A | 已完成（Docker 运行环境） | Laravel/Vue 基础工程、锁文件、Blade + Vue 管理入口、PHP 7.4 应用容器、MySQL 5.7.44 容器和 root/root 连接验证均完成；主机 PHP 7.4 已删除，后续 Laravel 命令使用 Docker |
-| - | 阶段 B | 未开始 | - |
+| 2026-10-08 | 阶段 B | 已完成 | 日文登录/登出、管理入口 auth 保护、关闭注册和密码重置、local/testing 专用管理员 Seeder 均已完成；HTTP 路由与前端生产构建验证通过 |
 | - | 阶段 C | 未开始 | - |
 | - | 阶段 D | 未开始 | - |
 | - | 阶段 E | 未开始 | - |

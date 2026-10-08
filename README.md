@@ -1,5 +1,36 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
 
+## シミュレーション申込・管理
+
+Laravel 6.18 + Vue 2 的保险模拟申请管理系统。开发阶段、版本要求及验收记录见 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。
+
+### 本地启动
+
+```sh
+docker compose up -d --build
+```
+
+打开 http://127.0.0.1:8000/login。MySQL 运行在 Docker 中，数据库名为 `laravel`，本地开发账号为 `root` / `root`。
+
+首次初始化数据库和本地管理员：
+
+```sh
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan db:seed --force
+```
+
+默认管理员为 `admin@example.com` / `password`。可通过 `.env` 中的 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 覆盖。Seeder 只在 `local`、`testing` 环境运行，示例凭据不得用于生产环境。
+
+### 前端构建
+
+```sh
+npm ci
+npm run dev
+npm run production
+```
+
+<!-- Laravel framework template content below is retained until project documentation consolidation. -->
+
 <p align="center">
 <a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
