@@ -29,6 +29,8 @@ docker compose exec app php artisan db:seed --force
 npm ci
 npm run dev
 npm run production
+npm run storybook
+npm run build-storybook
 npm test
 npm run test:coverage
 
@@ -73,3 +75,5 @@ docker compose exec mysql mysql -uroot -proot laravel -e 'SHOW TABLES; DESCRIBE 
 
 测试使用独立数据库 `laravel_testing`，PHPUnit 会刷新该库。不要把测试环境指向开发库 `laravel`。
 PHP 覆盖率使用 Docker PHP 镜像中的 PCOV。Dockerfile 更新后执行 `docker compose up -d --build app`；HTML 报告输出到 `coverage/php`。
+
+Storybook 使用与现有 Vue 2 / Webpack 4 / Node 14 配套的 6.5.16。执行 `npm run storybook` 后访问 <http://localhost:6006>；`npm run build-storybook` 会生成 `storybook-static/` 静态站点。当前 Storybook 主版本已不再维护 Vue 2 支持；升级 Storybook 前需先规划 Vue 3 或 Node/Webpack 工具链升级。

@@ -11,6 +11,8 @@
 - `.gitignore`：声明不提交的本地环境配置、依赖目录、缓存、日志及构建报告。
 - `.nvmrc`：指定项目使用的 Node.js 版本，供 nvm 切换运行时。
 - `.styleci.yml`：配置 PHP 代码风格检查规则。
+- `.storybook/main.js`：配置 Storybook 扫描 Vue 组件故事、加载 Essentials 插件、使用 Webpack 4 并编译项目 Sass。
+- `.storybook/preview.js`：为所有故事加载项目全局样式，并设置 Controls、Actions 和故事排序。
 - `ARCHITECTURE.md`：说明系统分层、前后端请求流、认证授权和数据库职责。
 - `DEVELOPMENT_PLAN.md`：记录需求、数据库设计、开发阶段、验收结果及回滚方式。
 - `Dockerfile`：构建运行 Laravel 的 PHP 7.4 应用镜像，并安装项目所需扩展及工具。
@@ -133,15 +135,24 @@
 - `resources/js/router/index.js`：定义后台 Vue 路由和页面组件映射。
 - `resources/js/store/index.js`：存储当前用户会话、申入列表、分页、筛选、加载和错误状态。
 - `resources/js/components/ApplicationsCreateConfirmation.vue`：显示新申入确认信息，确认后才提交创建请求。
+- `resources/js/components/ApplicationsCreateConfirmation.stories.js`：展示申入确认页的待提交和提交中状态。
 - `resources/js/components/AuthForm.vue`：复用认证页面的表单布局和提交状态处理。
 - `resources/js/components/BaseButton.vue`：统一按钮外观、禁用和提交中的状态。
+- `resources/js/components/BaseButton.stories.js`：展示主要、次要和禁用按钮，提供按钮类型、样式与禁用状态控件。
 - `resources/js/components/BaseErrorMessage.vue`：以一致样式显示字段或表单错误。
+- `resources/js/components/BaseErrorMessage.stories.js`：展示字段错误信息及可交互的错误文案。
 - `resources/js/components/BaseInput.vue`：封装带标签和校验错误的文本输入框。
+- `resources/js/components/BaseInput.stories.js`：展示普通文本和日期输入，并提供输入类型等控件。
 - `resources/js/components/BaseSelect.vue`：封装带标签和错误提示的下拉选择框。
+- `resources/js/components/BaseSelect.stories.js`：展示申入状态下拉框、选项及必填状态。
 - `resources/js/components/BaseTable.vue`：封装管理页面中重复使用的表格布局。
+- `resources/js/components/BaseTable.stories.js`：用日文申入样例展示表格列、数据行和操作插槽。
 - `resources/js/components/BaseTextarea.vue`：封装带标签和错误提示的多行文本框。
+- `resources/js/components/BaseTextarea.stories.js`：展示备注输入框及其双向输入状态。
 - `resources/js/components/ContentState.vue`：统一显示加载中、空结果和错误等内容状态。
+- `resources/js/components/ContentState.stories.js`：展示加载中、无结果、错误和正常内容状态，并提供重试事件操作。
 - `resources/js/components/SimulationApplicationForm.vue`：复用申入新增和修改表单字段、输入绑定及校验显示。
+- `resources/js/components/SimulationApplicationForm.stories.js`：展示空白申入表单和带服务端校验错误的表单。
 - `resources/js/components/__tests__/form-components.spec.js`：验证基础表单控件和错误提示的渲染行为。
 - `resources/js/views/AdminApp.vue`：管理后台布局入口，装配导航、会话信息和子页面。
 - `resources/js/views/ApplicationsCreate.vue`：收集新申入字段并进入确认步骤，确认后调用创建 API。
