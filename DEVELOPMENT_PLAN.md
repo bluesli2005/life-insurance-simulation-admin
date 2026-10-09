@@ -674,3 +674,18 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 | 2026-10-08 | 阶段 D | 已完成 | Vue 管理页及 CRUD 交互完成；前端 5 项测试、生产构建、浏览器主要页面/搜索/刷新验证及控制台检查通过；提交 `c402caf` |
 | 2026-10-08 | 示例数据日文化 | 已完成 | 本地 120 条申请的申请人、被保险人、受取人姓名及备注均为日文；全表检查无英文内容 |
 | 2026-10-08 | 阶段 E | 已完成 | README 首次安装和数据库说明、架构文档完成；Node 14/npm 6 与 Composer 2.2 临时干净安装，PHPUnit/Jest/开发与生产构建及浏览器联测通过；npm 锁文件已改为 npm 6 兼容格式；默认脚手架按用户要求保留 |
+
+
+## 2026-10-09：前后端分离（两步执行）
+
+用户要求先只迁移文件并提交，再修改文件，第二步完成后统一验收。
+
+- 第一步已提交 `6fa45f7`：166 个文件内容完全一致的迁移；0 行新增、0 行删除。迁移前 Jest 21 tests，PHPUnit 44 tests/209 assertions 通过。
+- 第二步：frontend/backend 独立构建和服务、统一 `/api/v1`、Session/CSRF/CORS、统一 Vue Router 与 Axios、前端重置邮件链接、Jest/Storybook/PHPUnit 路径更新、文档同步。
+- 实测修复旧 Laravel 无效 XSRF 密文抛 500 的情况，改为 419 并补回归。
+- 验证使用新 Compose project 和数据库 volume；原数据库未重建或覆盖。原旧服务不能直接使用迁移后的根目录配置。
+- 最终验证：Jest 27 tests；PHPUnit 50 tests/232 assertions；38 项真实 HTTP 检查（包含旧 Session 和记住登录 Cookie 重放）；development/production 与 Storybook 构建；两端独立镜像构建、后端干净 Composer 安装、代理/直连浏览器登录退出、搜索及深层页面刷新通过。第二步待用户验收。
+- 第二步保持未提交，供用户验收；不自动创建第二次 commit 或推送。
+- 保留限制：旧版本依赖警告、真实 SMTP 未验证、正式生产服务/HTTPS 未配置、原业务数据未导入新验证库。
+
+回退：审查第二步 diff，撤回本次改动并按第一步迁移记录恢复原目录；保留原数据库 volume 和实施前用户改动。不能仅回到文件迁移 commit 就宣称旧服务可运行，因为那时配置尚未调整。

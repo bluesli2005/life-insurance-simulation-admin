@@ -20,14 +20,14 @@ class UserDeletionTest extends TestCase
         $viewer = $this->createUser('viewer@example.com', User::ROLE_VIEWER);
         $this->actingAs($admin);
 
-        $this->patchJson('/admin/api/v1/users/'.$viewer->id.'/status', ['status' => User::STATUS_DELETED])
+        $this->patchJson('/api/v1/users/'.$viewer->id.'/status', ['status' => User::STATUS_DELETED])
             ->assertOk()->assertJsonPath('data.status', User::STATUS_DELETED);
 
         $this->assertSame(2, User::count());
         $this->assertSame(User::STATUS_DELETED, $viewer->fresh()->status);
-        $this->getJson('/admin/api/v1/users')->assertJsonPath('data.1.status', User::STATUS_DELETED);
+        $this->getJson('/api/v1/users')->assertJsonPath('data.1.status', User::STATUS_DELETED);
 
-        $this->patchJson('/admin/api/v1/users/'.$viewer->id.'/status', ['status' => User::STATUS_ACTIVE])
+        $this->patchJson('/api/v1/users/'.$viewer->id.'/status', ['status' => User::STATUS_ACTIVE])
             ->assertOk()->assertJsonPath('data.status', User::STATUS_ACTIVE);
         $this->assertSame(2, User::count());
         $this->assertTrue(Hash::check('password', $viewer->fresh()->password));
@@ -39,14 +39,14 @@ class UserDeletionTest extends TestCase
         $editor = $this->createUser('editor@example.com', User::ROLE_EDITOR);
 
         $this->actingAs($editor)
-            ->patchJson('/admin/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
+            ->patchJson('/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
             ->assertForbidden();
 
         $this->actingAs($admin)
-            ->patchJson('/admin/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
+            ->patchJson('/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
             ->assertStatus(422);
 
-        $this->patchJson('/admin/api/v1/users/'.$editor->id.'/status', ['status' => 'invalid'])
+        $this->patchJson('/api/v1/users/'.$editor->id.'/status', ['status' => 'invalid'])
             ->assertStatus(422)->assertJsonValidationErrors('status');
         $this->assertSame(User::STATUS_ACTIVE, $admin->fresh()->status);
     }
@@ -56,17 +56,17 @@ class UserDeletionTest extends TestCase
         $admin = $this->createUser('other@example.com', User::ROLE_SUPER_ADMIN);
         $secondAdmin = $this->createUser('second@example.com', User::ROLE_SUPER_ADMIN);
         $this->actingAs($admin)
-            ->patchJson('/admin/api/v1/users/'.$secondAdmin->id.'/status', ['status' => User::STATUS_DELETED])
+            ->patchJson('/api/v1/users/'.$secondAdmin->id.'/status', ['status' => User::STATUS_DELETED])
             ->assertOk();
 
-        $this->actingAs($secondAdmin)->getJson('/admin/api/v1/session')->assertUnauthorized();
+        $this->actingAs($secondAdmin)->getJson('/api/v1/auth/session')->assertUnauthorized();
         Role::where('code', User::ROLE_EDITOR)->update(['can_manage_users' => true]);
         $manager = $this->createUser('manager@example.com', User::ROLE_EDITOR);
         $this->actingAs($manager)
-            ->patchJson('/admin/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
+            ->patchJson('/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
             ->assertForbidden();
         $this->actingAs($admin)
-            ->patchJson('/admin/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
+            ->patchJson('/api/v1/users/'.$admin->id.'/status', ['status' => User::STATUS_DELETED])
             ->assertStatus(422);
     }
 
@@ -76,10 +76,10 @@ class UserDeletionTest extends TestCase
         $this->actingAs($viewer);
         $viewer->update(['status' => User::STATUS_DELETED]);
 
-        $this->getJson('/admin/api/v1/session')->assertUnauthorized();
+        $this->getJson('/api/v1/auth/session')->assertUnauthorized();
         $this->assertGuest();
-        $this->post('/login', ['email' => $viewer->email, 'password' => 'password'])
-            ->assertSessionHasErrors('email');
+        $this->post('/api/v1/auth/login', ['email' => $viewer->email, 'password' => 'password'])
+            ->assertStatus(422)->assertJsonValidationErrors('email');
         $this->assertGuest();
     }
 
@@ -90,9 +90,9 @@ class UserDeletionTest extends TestCase
         $token = Password::broker()->createToken($viewer);
         $viewer->update(['status' => User::STATUS_DELETED]);
 
-        $this->postJson('/password/email', ['email' => $viewer->email])->assertStatus(422);
+        $this->postJson('/api/v1/auth/password/email', ['email' => $viewer->email])->assertStatus(422);
         Notification::assertNothingSent();
-        $this->postJson('/password/reset', [
+        $this->postJson('/api/v1/auth/password/reset', [
             'token' => $token,
             'email' => $viewer->email,
             'password' => 'new-password-123',

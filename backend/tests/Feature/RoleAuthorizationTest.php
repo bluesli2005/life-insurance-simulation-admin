@@ -18,13 +18,13 @@ class RoleAuthorizationTest extends TestCase
         $application = factory(SimulationApplication::class)->create();
         $this->actingAs($viewer);
 
-        $this->getJson('/admin/api/v1/simulation-applications')->assertOk();
-        $this->getJson('/admin/api/v1/simulation-applications/'.$application->id)->assertOk();
-        $this->postJson('/admin/api/v1/simulation-applications', [])->assertForbidden();
-        $this->patchJson('/admin/api/v1/simulation-applications/'.$application->id, [])->assertForbidden();
-        $this->deleteJson('/admin/api/v1/simulation-applications/'.$application->id)->assertForbidden();
-        $this->getJson('/admin/api/v1/users')->assertForbidden();
-        $this->patchJson('/admin/api/v1/users/'.$viewer->id.'/role', ['role' => User::ROLE_SUPER_ADMIN])->assertForbidden();
+        $this->getJson('/api/v1/simulation-applications')->assertOk();
+        $this->getJson('/api/v1/simulation-applications/'.$application->id)->assertOk();
+        $this->postJson('/api/v1/simulation-applications', [])->assertForbidden();
+        $this->patchJson('/api/v1/simulation-applications/'.$application->id, [])->assertForbidden();
+        $this->deleteJson('/api/v1/simulation-applications/'.$application->id)->assertForbidden();
+        $this->getJson('/api/v1/users')->assertForbidden();
+        $this->patchJson('/api/v1/users/'.$viewer->id.'/role', ['role' => User::ROLE_SUPER_ADMIN])->assertForbidden();
         $this->assertSame(User::ROLE_VIEWER, $viewer->fresh()->role->code);
     }
 
@@ -34,11 +34,11 @@ class RoleAuthorizationTest extends TestCase
         $application = factory(SimulationApplication::class)->create();
         $this->actingAs($editor);
 
-        $this->getJson('/admin/api/v1/simulation-applications')->assertOk();
-        $this->patchJson('/admin/api/v1/simulation-applications/'.$application->id, ['notes' => '編集済み'])
+        $this->getJson('/api/v1/simulation-applications')->assertOk();
+        $this->patchJson('/api/v1/simulation-applications/'.$application->id, ['notes' => '編集済み'])
             ->assertOk();
-        $this->deleteJson('/admin/api/v1/simulation-applications/'.$application->id)->assertForbidden();
-        $this->getJson('/admin/api/v1/users')->assertForbidden();
+        $this->deleteJson('/api/v1/simulation-applications/'.$application->id)->assertForbidden();
+        $this->getJson('/api/v1/users')->assertForbidden();
     }
 
     public function test_super_admin_can_assign_roles_but_not_demote_protected_account_or_last_super_admin()
@@ -47,15 +47,15 @@ class RoleAuthorizationTest extends TestCase
         $viewer = $this->createUser('viewer@example.com', User::ROLE_VIEWER);
         $this->actingAs($admin);
 
-        $this->getJson('/admin/api/v1/users')->assertOk()
+        $this->getJson('/api/v1/users')->assertOk()
             ->assertJsonPath('data.0.email', 'admin@example.com')
             ->assertJsonPath('roles.2.code', User::ROLE_SUPER_ADMIN)
             ->assertJsonPath('roles.2.can_delete_applications', true);
-        $this->patchJson('/admin/api/v1/users/'.$viewer->id.'/role', ['role' => User::ROLE_EDITOR])
+        $this->patchJson('/api/v1/users/'.$viewer->id.'/role', ['role' => User::ROLE_EDITOR])
             ->assertOk()->assertJsonPath('data.role', User::ROLE_EDITOR);
-        $this->patchJson('/admin/api/v1/users/'.$viewer->id.'/role', ['role' => 'invalid'])
+        $this->patchJson('/api/v1/users/'.$viewer->id.'/role', ['role' => 'invalid'])
             ->assertStatus(422)->assertJsonValidationErrors('role');
-        $this->patchJson('/admin/api/v1/users/'.$admin->id.'/role', ['role' => User::ROLE_VIEWER])
+        $this->patchJson('/api/v1/users/'.$admin->id.'/role', ['role' => User::ROLE_VIEWER])
             ->assertStatus(422);
         $this->assertSame(User::ROLE_SUPER_ADMIN, $admin->fresh()->role->code);
     }
@@ -64,7 +64,7 @@ class RoleAuthorizationTest extends TestCase
     {
         $admin = $this->createUser('other@example.com', User::ROLE_SUPER_ADMIN);
         $this->actingAs($admin)
-            ->patchJson('/admin/api/v1/users/'.$admin->id.'/role', ['role' => User::ROLE_EDITOR])
+            ->patchJson('/api/v1/users/'.$admin->id.'/role', ['role' => User::ROLE_EDITOR])
             ->assertStatus(422);
     }
 
@@ -74,12 +74,12 @@ class RoleAuthorizationTest extends TestCase
         $application = factory(SimulationApplication::class)->create();
         $this->actingAs($editor);
 
-        $this->deleteJson('/admin/api/v1/simulation-applications/'.$application->id)->assertForbidden();
+        $this->deleteJson('/api/v1/simulation-applications/'.$application->id)->assertForbidden();
 
         Role::where('code', User::ROLE_EDITOR)->update(['can_delete_applications' => true]);
         $editor->unsetRelation('role');
 
-        $this->deleteJson('/admin/api/v1/simulation-applications/'.$application->id)->assertOk();
+        $this->deleteJson('/api/v1/simulation-applications/'.$application->id)->assertOk();
     }
 
     private function createUser($email, $role)

@@ -35,7 +35,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import client, { errorMessage } from '../api/client';
 
 export default {
     props: {
@@ -60,9 +60,7 @@ export default {
             this.error = '';
             this.status = '';
             try {
-                await axios.post(this.action, this.form, {
-                    headers: { Accept: 'application/json' },
-                });
+                await client.post(this.action, this.form);
                 if (this.successMessage) this.status = this.successMessage;
                 if (this.clearOnSuccess) {
                     this.fields.forEach(field => { this.form[field.name] = field.type === 'checkbox' ? false : ''; });
@@ -74,7 +72,7 @@ export default {
                     : {};
                 this.error = Object.keys(this.errors).length
                     ? ''
-                    : '処理に失敗しました。入力内容をご確認ください。';
+                    : errorMessage(error, '処理に失敗しました。入力内容をご確認ください。');
             } finally {
                 this.processing = false;
             }

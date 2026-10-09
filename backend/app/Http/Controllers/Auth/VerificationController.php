@@ -31,7 +31,7 @@ class VerificationController extends Controller
 
     public function show(Request $request)
     {
-        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
+        return response()->json(['message' => 'メール確認は利用できません。'], 404);
     }
 
     /**

@@ -25,9 +25,11 @@ class RegisterController extends Controller
 
     use RegistersUsers;
 
-    public function showRegistrationForm()
+    protected function registered(\Illuminate\Http\Request $request, $user)
     {
-        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
+        $request->session()->regenerate();
+
+        return response()->json(['message' => '登録しました。'], 201);
     }
 
     /**

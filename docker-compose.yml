@@ -1,17 +1,21 @@
+name: life-insurance-separated
 services:
-  app:
+  backend:
     build:
-      context: .
+      context: ./backend
     platform: linux/amd64
-    container_name: life-insurance-simulation-admin-app
     working_dir: /var/www/html
     volumes:
-      - .:/var/www/html
+      - ./backend:/var/www/html
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8001:8000"
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
+      APP_URL: http://localhost:8001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8081}
+      SESSION_COOKIE: life_insurance_separated_session
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
@@ -21,25 +25,28 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        MIX_API_BASE_URL: ${MIX_API_BASE_URL:-}
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
   mysql:
     image: mysql:5.7.44
     platform: linux/amd64
-    container_name: life-insurance-simulation-admin-mysql
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: laravel
-    ports:
-      - "3306:3306"
     volumes:
       - mysql57_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 12
-
+      retries: 20
 volumes:
   mysql57_data:

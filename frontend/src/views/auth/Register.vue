@@ -1,7 +1,7 @@
 <template>
     <AuthForm
         title="管理者登録"
-        action="/register"
+        action="/auth/register"
         submit-label="登録"
         :fields="fields"
         :links="links"
@@ -27,7 +27,7 @@ export default {
     },
     methods: {
         goToAdmin() {
-            window.location.assign('/admin/applications');
+            this.$router.push('/admin/applications');
         },
     },
 };

@@ -1,12 +1,14 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import simulationApplicationsApi from '../api/simulationApplications';
+import { errorMessage } from '../api/client';
 
 Vue.use(Vuex);
 
 export default new Vuex.Store({
     state: {
         session: null,
+        navigationError: '',
         applications: [],
         pagination: {
             current_page: 1,
@@ -23,6 +25,7 @@ export default new Vuex.Store({
         error: '',
     },
     mutations: {
+        setNavigationError(state, error) { state.navigationError = error; },
         setSession(state, session) {
             state.session = session;
         },
@@ -50,9 +53,7 @@ export default new Vuex.Store({
                 const response = await simulationApplicationsApi.list(state.filters);
                 commit('setApplications', response.data);
             } catch (error) {
-                const message = error.response && error.response.data
-                    ? error.response.data.message
-                    : '申込一覧を取得できませんでした。';
+                const message = errorMessage(error, '申込一覧を取得できませんでした。');
                 commit('setError', message || '申込一覧を取得できませんでした。');
                 throw error;
             } finally {

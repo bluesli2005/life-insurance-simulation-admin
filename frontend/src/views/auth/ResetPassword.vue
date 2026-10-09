@@ -1,7 +1,7 @@
 <template>
     <AuthForm
         title="新しいパスワードの設定"
-        action="/password/reset"
+        action="/auth/password/reset"
         submit-label="パスワードを更新"
         :fields="fields"
         @success="backToLogin"
@@ -25,7 +25,7 @@ export default {
     },
     methods: {
         backToLogin() {
-            window.location.assign('/admin/applications');
+            this.$router.push('/admin/applications');
         },
     },
 };

@@ -23,10 +23,6 @@ class ForgotPasswordController extends Controller
 
     use SendsPasswordResetEmails;
 
-    public function showLinkRequestForm()
-    {
-        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
-    }
 
     protected function credentials(Request $request)
     {

@@ -31,10 +31,6 @@ class ResetPasswordController extends Controller
      */
     protected $redirectTo = RouteServiceProvider::HOME;
 
-    public function showResetForm(Request $request, $token = null)
-    {
-        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
-    }
 
     protected function credentials(Request $request)
     {

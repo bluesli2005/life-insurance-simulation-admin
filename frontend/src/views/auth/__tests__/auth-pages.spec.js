@@ -1,8 +1,8 @@
 import { createLocalVue, mount } from '@vue/test-utils';
 import VueRouter from 'vue-router';
-import axios from 'axios';
+import client from '../../../api/client';
+import router from '../../../router';
 import AuthForm from '../../../components/AuthForm.vue';
-import AuthApp from '../../AuthApp.vue';
 import Login from '../Login.vue';
 import ConfirmPassword from '../ConfirmPassword.vue';
 import ForgotPassword from '../ForgotPassword.vue';
@@ -11,7 +11,7 @@ import Register from '../Register.vue';
 import EmailVerification from '../EmailVerification.vue';
 import PasswordChange from '../../PasswordChange.vue';
 
-jest.mock('axios', () => ({ post: jest.fn() }));
+jest.mock('../../../api/client', () => ({ post: jest.fn(), get: jest.fn(), errorMessage: (error, fallback) => fallback }));
 
 const localVue = createLocalVue();
 localVue.use(VueRouter);
@@ -19,30 +19,22 @@ const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
 
 describe('Vue authentication pages', () => {
     beforeEach(() => {
-        axios.post.mockReset();
+        client.post.mockReset();
     });
 
     test('authentication router exposes registration but keeps email verification closed', () => {
-        const paths = AuthApp.router.options.routes.map(route => route.path);
-
-        expect(paths).toEqual([
-            '/password/confirm',
-            '/password/reset/:token',
-            '/password/reset',
-            '/login',
-            '/register',
-            '*',
-        ]);
+        const paths = router.options.routes.map(route => route.path);
+        expect(paths).toEqual(expect.arrayContaining(['/password/confirm', '/password/reset/:token', '/password/reset', '/login', '/register', '/admin/applications']));
         expect(paths).not.toContain('/email/verify');
     });
 
     test('auth form posts JSON and emits success', async () => {
-        axios.post.mockResolvedValue({ status: 200 });
+        client.post.mockResolvedValue({ status: 200 });
         const wrapper = mount(AuthForm, {
             localVue,
             propsData: {
                 title: 'ログイン',
-                action: '/login',
+                action: '/auth/login',
                 submitLabel: 'ログイン',
                 successMessage: '完了しました。',
                 fields: [{ name: 'email', label: 'メールアドレス', type: 'email' }],
@@ -56,15 +48,13 @@ describe('Vue authentication pages', () => {
         await flushPromises();
         await wrapper.vm.$nextTick();
 
-        expect(axios.post).toHaveBeenCalledWith('/login', { email: 'admin@example.com' }, {
-            headers: { Accept: 'application/json' },
-        });
+        expect(client.post).toHaveBeenCalledWith('/auth/login', { email: 'admin@example.com' });
         expect(wrapper.emitted('success')).toHaveLength(1);
         expect(wrapper.text()).toContain('完了しました。');
     });
 
     test('password change clears sensitive fields after success', async () => {
-        axios.post.mockResolvedValue({ status: 200 });
+        client.post.mockResolvedValue({ status: 200 });
         const wrapper = mount(AuthForm, {
             localVue,
             propsData: {
@@ -113,12 +103,12 @@ describe('Vue authentication pages', () => {
     });
 
     test('auth form displays field validation errors and generic server errors', async () => {
-        axios.post.mockRejectedValueOnce({ response: { data: { errors: { email: ['正しい形式で入力してください。'] } } } });
+        client.post.mockRejectedValueOnce({ response: { data: { errors: { email: ['正しい形式で入力してください。'] } } } });
         const wrapper = mount(AuthForm, {
             localVue,
             propsData: {
                 title: 'ログイン',
-                action: '/login',
+                action: '/auth/login',
                 submitLabel: 'ログイン',
                 fields: [{ name: 'email', label: 'メールアドレス', type: 'email' }],
             },
@@ -129,7 +119,7 @@ describe('Vue authentication pages', () => {
         await wrapper.vm.$nextTick();
         expect(wrapper.text()).toContain('正しい形式で入力してください。');
 
-        axios.post.mockRejectedValueOnce(new Error('network error'));
+        client.post.mockRejectedValueOnce(new Error('network error'));
         await wrapper.find('form').trigger('submit');
         await flushPromises();
         await wrapper.vm.$nextTick();

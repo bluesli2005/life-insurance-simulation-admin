@@ -45,10 +45,11 @@
 </template>
 
 <script>
+import client, { errorMessage } from '../api/client';
 export default {
     computed: {
-        currentUserId() { return this.$store.state.session.user_id; },
-        canDeleteUsers() { return this.$store.state.session.role_code === 'super_admin'; },
+        currentUserId() { return (this.$store.state.session || {}).user_id; },
+        canDeleteUsers() { return (this.$store.state.session || {}).role_code === 'super_admin'; },
     },
     data() {
         return { users: [], roles: [], saving: null, error: '', notice: '' };
@@ -59,11 +60,11 @@ export default {
     methods: {
         async load() {
             try {
-                const response = await window.axios.get('/admin/api/v1/users');
+                const response = await client.get('/users');
                 this.users = response.data.data.map(user => Object.assign({ selectedRole: user.role }, user));
                 this.roles = response.data.roles;
             } catch (error) {
-                this.error = 'ユーザー一覧を取得できませんでした。';
+                this.error = errorMessage(error, 'ユーザー一覧を取得できませんでした。');
             }
         },
         async save(user) {
@@ -71,11 +72,11 @@ export default {
             this.error = '';
             this.notice = '';
             try {
-                const response = await window.axios.patch(`/admin/api/v1/users/${user.id}/role`, { role: user.selectedRole });
+                const response = await client.patch(`/users/${user.id}/role`, { role: user.selectedRole });
                 user.role = response.data.data.role;
                 this.notice = '権限を変更しました。';
             } catch (error) {
-                this.error = error.response && error.response.data.message || '権限を変更できませんでした。';
+                this.error = errorMessage(error, '権限を変更できませんでした。');
             } finally {
                 this.saving = null;
             }
@@ -87,11 +88,11 @@ export default {
             this.error = '';
             this.notice = '';
             try {
-                const response = await window.axios.patch(`/admin/api/v1/users/${user.id}/status`, { status });
+                const response = await client.patch(`/users/${user.id}/status`, { status });
                 user.status = response.data.data.status;
                 this.notice = status === 'deleted' ? 'ユーザーを削除しました。' : 'ユーザーを復元しました。';
             } catch (error) {
-                this.error = error.response && error.response.data.message || 'ユーザーの状態を変更できませんでした。';
+                this.error = errorMessage(error, 'ユーザーの状態を変更できませんでした。');
             } finally {
                 this.saving = null;
             }

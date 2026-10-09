@@ -3,7 +3,7 @@
         <div class="page-heading"><h2>パスワード変更</h2></div>
         <AuthForm
             title="現在のパスワードを確認"
-            action="/admin/password"
+            action="/auth/password/change"
             submit-label="パスワードを変更"
             success-message="パスワードを変更しました。"
             :fields="fields"

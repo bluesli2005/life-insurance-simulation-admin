@@ -35,6 +35,7 @@
 import BaseButton from '../components/BaseButton.vue';
 import ContentState from '../components/ContentState.vue';
 import simulationApplicationsApi from '../api/simulationApplications';
+import { errorMessage } from '../api/client';
 
 const statusLabels = {
     draft: '下書き',
@@ -50,8 +51,8 @@ export default {
         return { application: null, loading: true, deleting: false, error: '' };
     },
     computed: {
-        canEdit() { return this.$store.state.session.can_write_applications; },
-        canDelete() { return this.$store.state.session.can_delete_applications; },
+        canEdit() { return (this.$store.state.session || {}).can_write_applications; },
+        canDelete() { return (this.$store.state.session || {}).can_delete_applications; },
         basePath() {
             return `/admin/applications/${this.$route.params.id}`;
         },
@@ -69,7 +70,7 @@ export default {
             } catch (error) {
                 this.error = error.response && error.response.status === 404
                     ? '申込が見つかりません。'
-                    : '申込情報を取得できませんでした。';
+                    : errorMessage(error, '申込情報を取得できませんでした。');
             } finally {
                 this.loading = false;
             }
@@ -88,7 +89,7 @@ export default {
                 await simulationApplicationsApi.remove(this.application.id);
                 this.$router.push('/admin/applications');
             } catch (error) {
-                this.error = '申込を削除できませんでした。';
+                this.error = errorMessage(error, '申込を削除できませんでした。');
             } finally {
                 this.deleting = false;
             }

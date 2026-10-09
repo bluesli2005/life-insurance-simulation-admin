@@ -25,6 +25,7 @@
 import ContentState from '../components/ContentState.vue';
 import SimulationApplicationForm from '../components/SimulationApplicationForm.vue';
 import simulationApplicationsApi from '../api/simulationApplications';
+import { errorMessage } from '../api/client';
 
 export default {
     components: { ContentState, SimulationApplicationForm },
@@ -47,7 +48,7 @@ export default {
                 const response = await simulationApplicationsApi.show(this.$route.params.id);
                 this.application = response.data.data;
             } catch (error) {
-                this.loadError = '申込情報を取得できませんでした。';
+                this.loadError = errorMessage(error, '申込情報を取得できませんでした。');
             } finally {
                 this.loading = false;
             }
@@ -61,7 +62,7 @@ export default {
                 this.$router.push(this.detailPath);
             } catch (error) {
                 this.errors = error.response && error.response.data.errors ? error.response.data.errors : {};
-                this.saveError = '申込を保存できませんでした。入力内容をご確認ください。';
+                this.saveError = errorMessage(error, '申込を保存できませんでした。入力内容をご確認ください。');
             } finally {
                 this.saving = false;
             }

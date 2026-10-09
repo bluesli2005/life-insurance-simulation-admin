@@ -1,7 +1,7 @@
 <template>
     <AuthForm
         title="管理画面ログイン"
-        action="/login"
+        action="/auth/login"
         submit-label="ログイン"
         :fields="fields"
         :links="links"
@@ -29,7 +29,7 @@ export default {
     },
     methods: {
         goToAdmin() {
-            window.location.assign('/admin/applications');
+            this.$router.push('/admin/applications');
         },
     },
 };

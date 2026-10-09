@@ -1,5 +1,5 @@
 module.exports = {
-    stories: ['../resources/js/**/*.stories.js'],
+    stories: ['../src/**/*.stories.js'],
     addons: ['@storybook/addon-essentials'],
     core: { builder: 'webpack4' },
     webpackFinal: async config => {

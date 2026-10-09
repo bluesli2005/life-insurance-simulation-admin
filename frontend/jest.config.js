@@ -6,8 +6,8 @@ module.exports = {
         '^.+\\.js$': 'babel-jest',
     },
     collectCoverageFrom: [
-        'resources/js/**/*.{js,vue}',
-        '!resources/js/**/__tests__/**',
+        'src/**/*.{js,vue}',
+        '!src/**/__tests__/**',
     ],
-    testMatch: ['**/resources/js/**/__tests__/**/*.spec.js'],
+    testMatch: ['**/src/**/__tests__/**/*.spec.js'],
 };

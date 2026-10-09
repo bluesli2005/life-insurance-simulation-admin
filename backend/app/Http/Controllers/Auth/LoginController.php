@@ -3,41 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
 use App\User;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
     use AuthenticatesUsers;
 
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = RouteServiceProvider::HOME;
-
-    protected function redirectTo()
+    public function __construct()
     {
-        return RouteServiceProvider::HOME;
-    }
-
-    protected function loggedOut(Request $request)
-    {
-        return redirect()->route('login');
+        $this->middleware('guest')->except('logout');
     }
 
     protected function credentials(Request $request)
@@ -45,18 +21,18 @@ class LoginController extends Controller
         return $request->only($this->username(), 'password') + ['status' => User::STATUS_ACTIVE];
     }
 
-    public function showLoginForm()
+    protected function attemptLogin(Request $request)
     {
-        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
+        return $this->guard()->attempt($this->credentials($request), $request->boolean('remember'));
     }
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    protected function authenticated(Request $request, $user)
     {
-        $this->middleware('guest')->except('logout');
+        return response()->noContent();
+    }
+
+    protected function loggedOut(Request $request)
+    {
+        return response()->noContent();
     }
 }

@@ -13,13 +13,13 @@ class AccountManagementTest extends TestCase
 
     public function test_new_administrator_is_registered_in_the_database_and_can_enter_the_admin_page()
     {
-        $this->post('/register', [
+        $this->post('/api/v1/auth/register', [
             'name' => '新規 管理者',
             'email' => 'new-admin@example.com',
             'password' => 'secure-password-123',
             'password_confirmation' => 'secure-password-123',
             'role' => User::ROLE_SUPER_ADMIN,
-        ])->assertRedirect('/admin/applications');
+        ])->assertStatus(201);
 
         $user = User::where('email', 'new-admin@example.com')->firstOrFail();
         $this->assertSame('新規 管理者', $user->name);
@@ -27,7 +27,7 @@ class AccountManagementTest extends TestCase
         $this->assertTrue(Hash::check('secure-password-123', $user->password));
         $this->assertNotSame('secure-password-123', $user->password);
         $this->assertAuthenticatedAs($user);
-        $this->get('/admin/applications')->assertOk();
+        $this->getJson('/api/v1/auth/session')->assertOk();
     }
 
     public function test_registration_rejects_duplicate_email_and_unconfirmed_password()
@@ -38,7 +38,7 @@ class AccountManagementTest extends TestCase
             'password' => Hash::make('password-123'),
         ]);
 
-        $this->postJson('/register', [
+        $this->postJson('/api/v1/auth/register', [
             'name' => '新規 管理者',
             'email' => 'existing@example.com',
             'password' => 'secure-password-123',
@@ -51,7 +51,7 @@ class AccountManagementTest extends TestCase
 
     public function test_password_change_requires_login_and_current_password()
     {
-        $this->postJson('/admin/password', [])->assertUnauthorized();
+        $this->postJson('/api/v1/auth/password/change', [])->assertUnauthorized();
 
         $user = User::create([
             'name' => '管理者',
@@ -60,7 +60,7 @@ class AccountManagementTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->postJson('/admin/password', [
+            ->postJson('/api/v1/auth/password/change', [
                 'current_password' => 'wrong-password',
                 'password' => 'new-password-123',
                 'password_confirmation' => 'new-password-123',
@@ -81,7 +81,7 @@ class AccountManagementTest extends TestCase
         $this->actingAs($user);
         session(['auth.password_confirmed_at' => time()]);
 
-        $this->postJson('/admin/password', [
+        $this->postJson('/api/v1/auth/password/change', [
             'current_password' => 'old-password-123',
             'password' => 'new-password-123',
             'password_confirmation' => 'new-password-123',

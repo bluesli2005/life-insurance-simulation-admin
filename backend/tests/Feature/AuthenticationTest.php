@@ -10,58 +10,53 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_admin()
+    public function test_guest_receives_json_401_even_without_accept_header()
     {
-        $this->get('/admin/applications')->assertRedirect('/login');
+        $this->get('/api/v1/auth/session')->assertUnauthorized()->assertJsonStructure(['message']);
     }
 
-    public function test_user_can_log_in_and_reach_admin()
+    public function test_user_can_log_in_and_read_session()
     {
         $user = $this->createUser();
-
-        $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'password',
-        ])->assertRedirect('/admin/applications');
-
+        $this->post('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password', 'remember' => false])
+            ->assertNoContent();
         $this->assertAuthenticatedAs($user);
-        $this->get('/admin/applications')->assertOk();
+        $this->getJson('/api/v1/auth/session')->assertOk();
     }
 
-    public function test_authenticated_user_is_redirected_from_login_page()
+    public function test_authenticated_user_cannot_use_guest_auth_api()
     {
-        $this->actingAs($this->createUser())
-            ->get('/login')
-            ->assertRedirect('/admin/applications');
+        $this->actingAs($this->createUser())->post('/api/v1/auth/login', [])->assertStatus(409);
     }
 
-    public function test_invalid_credentials_do_not_authenticate_user()
+    public function test_invalid_credentials_return_validation_without_authentication()
     {
         $user = $this->createUser();
-
-        $this->from('/login')->post('/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ])->assertRedirect('/login')->assertSessionHasErrors('email');
-
+        $this->post('/api/v1/auth/login', ['email' => $user->email, 'password' => 'wrong-password'])
+            ->assertStatus(422)->assertJsonValidationErrors('email');
         $this->assertGuest();
     }
 
-    public function test_logout_redirects_to_login_page()
+    public function test_logout_invalidates_session_without_redirect()
     {
-        $this->actingAs($this->createUser())
-            ->post('/logout')
-            ->assertRedirect('/login');
-
+        $this->actingAs($this->createUser())->post('/api/v1/auth/logout')->assertNoContent();
         $this->assertGuest();
+        $this->get('/api/v1/auth/session')->assertUnauthorized();
+    }
+
+    public function test_login_attempts_are_rate_limited()
+    {
+        $user = $this->createUser();
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'wrong'])
+                ->assertStatus(422);
+        }
+        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'wrong'])
+            ->assertStatus(429)->assertJsonValidationErrors('email');
     }
 
     private function createUser()
     {
-        return User::create([
-            'name' => '管理者',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password'),
-        ]);
+        return User::create(['name' => '管理者', 'email' => 'admin@example.com', 'password' => bcrypt('password')]);
     }
 }

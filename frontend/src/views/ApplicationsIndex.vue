@@ -79,7 +79,7 @@ export default {
         };
     },
     computed: Object.assign({}, mapState(['applications', 'pagination', 'loading', 'error']), {
-        canEdit() { return this.$store.state.session.can_write_applications; },
+        canEdit() { return (this.$store.state.session || {}).can_write_applications; },
         currentPage() { return this.pagination.current_page || 1; },
         lastPage() { return this.pagination.last_page || 1; },
         perPage() { return this.pagination.per_page || 10; },

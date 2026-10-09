@@ -19,22 +19,25 @@
 </template>
 
 <script>
+import auth from '../api/auth';
 export default {
     data() {
         return { loggingOut: false, logoutError: '' };
     },
     computed: {
-        userName() { return this.$store.state.session.user_name; },
-        roleLabel() { return this.$store.state.session.role_name; },
-        canManageUsers() { return this.$store.state.session.can_manage_users; },
+        userName() { return (this.$store.state.session || {}).user_name; },
+        roleLabel() { return (this.$store.state.session || {}).role_name; },
+        canManageUsers() { return (this.$store.state.session || {}).can_manage_users; },
     },
     methods: {
         async logout() {
             this.loggingOut = true;
             this.logoutError = '';
             try {
-                await window.axios.post('/logout', {}, { headers: { Accept: 'application/json' } });
-                window.location.assign('/login');
+                await auth.logout();
+                this.$store.commit('setSession', null);
+                await auth.csrf();
+                this.$router.push('/login');
             } catch (error) {
                 this.logoutError = 'ログアウトできませんでした。再度お試しください。';
                 this.loggingOut = false;

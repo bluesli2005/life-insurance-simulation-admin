@@ -28,23 +28,23 @@ class SimulationApplicationsApiTest extends TestCase
     {
         $payload = $this->validPayload();
 
-        $created = $this->postJson('/admin/api/v1/simulation-applications', $payload)
+        $created = $this->postJson('/api/v1/simulation-applications', $payload)
             ->assertCreated()
             ->assertJsonPath('data.application_number', 'SIM-TEST-0001')
             ->assertJsonPath('data.currency', 'JPY')
             ->json('data');
 
-        $this->getJson('/admin/api/v1/simulation-applications/'.$created['id'])
+        $this->getJson('/api/v1/simulation-applications/'.$created['id'])
             ->assertOk()
             ->assertJsonPath('data.applicant_name', '申込 太郎');
 
-        $this->patchJson('/admin/api/v1/simulation-applications/'.$created['id'], [
+        $this->patchJson('/api/v1/simulation-applications/'.$created['id'], [
             'beneficiary_name' => '受取 花子',
             'expiry_date' => '2035-01-01',
         ])->assertOk()
             ->assertJsonPath('data.beneficiary_name', '受取 花子');
 
-        $this->deleteJson('/admin/api/v1/simulation-applications/'.$created['id'])
+        $this->deleteJson('/api/v1/simulation-applications/'.$created['id'])
             ->assertOk()
             ->assertJsonPath('data', null);
 
@@ -53,7 +53,7 @@ class SimulationApplicationsApiTest extends TestCase
 
     public function test_invalid_application_data_returns_japanese_validation_errors()
     {
-        $this->postJson('/admin/api/v1/simulation-applications', array_merge($this->validPayload(), [
+        $this->postJson('/api/v1/simulation-applications', array_merge($this->validPayload(), [
             'insured_birth_date' => now()->addDay()->toDateString(),
             'coverage_amount' => 0,
             'status' => 'unknown',
@@ -73,7 +73,7 @@ class SimulationApplicationsApiTest extends TestCase
     {
         factory(SimulationApplication::class)->create(['application_number' => 'SIM-DUPLICATE']);
 
-        $this->postJson('/admin/api/v1/simulation-applications', array_merge($this->validPayload(), [
+        $this->postJson('/api/v1/simulation-applications', array_merge($this->validPayload(), [
             'application_number' => 'SIM-DUPLICATE',
         ]))->assertStatus(422)
             ->assertJsonValidationErrors(['application_number']);
@@ -92,7 +92,7 @@ class SimulationApplicationsApiTest extends TestCase
             'status' => 'approved',
         ]);
 
-        $this->getJson('/admin/api/v1/simulation-applications?search='.urlencode('検索対象').'&status=submitted&per_page=10')
+        $this->getJson('/api/v1/simulation-applications?search='.urlencode('検索対象').'&status=submitted&per_page=10')
             ->assertOk()
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('meta.per_page', 10)
@@ -102,7 +102,7 @@ class SimulationApplicationsApiTest extends TestCase
 
     public function test_pagination_size_must_be_in_the_allowed_list()
     {
-        $this->getJson('/admin/api/v1/simulation-applications?per_page=15')
+        $this->getJson('/api/v1/simulation-applications?per_page=15')
             ->assertStatus(422)
             ->assertJsonValidationErrors(['per_page']);
     }
@@ -111,9 +111,9 @@ class SimulationApplicationsApiTest extends TestCase
     {
         auth()->logout();
 
-        $this->getJson('/admin/api/v1/simulation-applications')->assertUnauthorized();
+        $this->getJson('/api/v1/simulation-applications')->assertUnauthorized();
         $this->actingAs(User::where('email', 'admin@example.com')->first());
-        $this->getJson('/admin/api/v1/simulation-applications/999')->assertNotFound();
+        $this->getJson('/api/v1/simulation-applications/999')->assertNotFound();
     }
 
     public function test_sample_seeder_is_repeatable_and_refreshes_japanese_sample_text()

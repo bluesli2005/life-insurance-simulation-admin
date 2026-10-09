@@ -1,103 +1,119 @@
 # 首次安装说明
 
-适用于首次在本机安装本项目。所有命令在项目根目录执行。安装会初始化本地开发数据库并写入示例申请数据；不要直接用于生产环境。
+在 `{USERPATH}/develop/life-insurance-simulation-admin` 仓库根目录执行。保留 PHP 7.4、Laravel 6.18、Vue 2、MySQL 5.7；Apple Silicon 的 PHP/MySQL 使用 Docker amd64，避免直接用主机新 PHP 运行旧 Laravel。
 
-## 1. 准备环境
+## 1. 准备工具
 
-- 安装并启动 Docker Desktop，确认 Docker 可以运行容器。
-- 安装 nvm。项目通过 `.nvmrc` 固定 Node.js `14.21.3`，对应 npm `6.14.18`。
-- 克隆或取得项目代码，并在终端进入项目根目录。
+安装并启动 Docker Desktop，确认 Docker Compose 可用。独立前端开发使用 Node 14.21.3/npm 6.14.18；只通过 Docker 构建前端则无需主机 Node。
 
-本机不需要安装 PHP、MySQL 或 Composer：PHP 7.4 和 MySQL 5.7 在 Docker 中运行，Composer 通过 Composer 容器执行。
-
-## 2. 配置项目与前端依赖
-
-```sh
-cp .env.example .env
-nvm install
-nvm use
-node --version
-npm --version
-npm ci
-npm run production
+```bash
+docker version
+docker compose version
 ```
 
-版本检查应分别显示 `v14.21.3` 和 `6.14.18`。如果 `nvm` 命令不可用，先按 nvm 官方说明安装并重新打开终端。`.env.example` 已配置本地数据库 `laravel` 和开发账号；Docker Compose 会将应用容器的数据库地址设为 `mysql`。
+确保本地 8080、8001 未被占用。MySQL 默认没有主机端口映射。
 
-## 3. 启动 MySQL 并安装 PHP 依赖
+## 2. 创建后端环境文件
 
-```sh
-docker compose up -d mysql
-docker compose ps
-docker run --rm -v "$PWD":/app -w /app composer:2.2 install
+首次安装且 backend/.env 不存在时：
+
+```bash
+cp backend/.env.example backend/.env
 ```
 
-等待 MySQL 显示为运行/健康状态。首次运行 `composer:2.2` 时 Docker 可能需要下载镜像；Composer 会把 PHP 依赖安装到项目的 `vendor` 目录。
+已有文件应保留。开发数据库用户名和密码保持 `root/root`，服务间使用 `DB_HOST=mysql`。Compose 的 environment 优先于 backend/.env；自定义 `FRONTEND_URL`、`CORS_ALLOWED_ORIGINS` 和构建变量时可通过根目录的本地 `.env` 或 shell 环境设置。所有真实环境文件均忽略，不提交。
 
-## 4. 构建应用并初始化数据库
+## 3. 安装后端依赖
 
-```sh
-docker compose build app
-docker compose run --rm app php artisan key:generate
-docker compose run --rm app php artisan migrate --force
-docker compose run --rm app php artisan db:seed --force
-docker compose up -d app
+从根目录使用固定 Composer 2.2：
+
+```bash
+docker run --rm -v "$PWD/backend:/app" -w /app composer:2.2 composer install --no-interaction --prefer-dist
 ```
 
-`key:generate` 会将应用密钥写入本地 `.env`。迁移会建立数据表，Seeder 会创建本地管理员并写入 120 条日文示例申请。
+安装严格使用 composer.lock 和 PHP 7.4 platform 配置。backend/vendor 保留在后端目录，前端无需它。若环境中已有 vendor，此命令检查并补齐锁定依赖。
 
-## 5. 登录并确认
+## 4. 构建与初始化密钥
 
-打开 <http://127.0.0.1:8000/login>，使用本地默认账号登录：
-
-- 邮箱：`admin@example.com`
-- 密码：`password`
-
-可在首次运行 Seeder 前于 `.env` 设置 `ADMIN_EMAIL`、`ADMIN_PASSWORD`，以创建自定义本地初始账号。只要 `users` 表已有账号，重跑 Seeder 不会改写邮箱或密码。此默认账号仅供本地开发，不可用于生产环境。
-
-登录、注册及密码相关页面由 Vue 渲染。可在 `/register` 注册账号，在登录后的 `/admin/password` 修改密码。角色定义和权限保存在独立的 `roles` 表，用户通过 `users.role_id` 关联；新账号默认 `viewer`，只能查看申入。`editor` 可新增和编辑；`super_admin` 还可删除申入，并在 `/admin/users` 分配角色、标记删除或恢复其他账号。用户删除仅将 `users.status` 改为 `deleted`，不移除记录；被删除账号不能登录。默认 `admin@example.com` 为最高管理者，不能标记删除。邮箱验证和注册审核仍关闭。若要接收密码重置邮件，请在 `.env` 配置 `MAIL_HOST`、`MAIL_PORT`、`MAIL_USERNAME`、`MAIL_PASSWORD`、`MAIL_ENCRYPTION` 和 `MAIL_FROM_ADDRESS`，然后重启应用容器。
-
-所有页面经 Laravel 路由返回同一份静态 `resources/spa.html`，由 Vue 显示；不需要 Blade 参与页面渲染。修改 Vue/样式后运行 `npm run dev` 重新生成前端资源，再刷新浏览器。
-
-## 数据库连接信息
-
-| 配置 | 值 |
-| --- | --- |
-| 数据库 | `laravel` |
-| 用户名 / 密码 | `root` / `root` |
-| 应用容器地址 | `mysql:3306` |
-| 本机客户端地址 | `127.0.0.1:3306` |
-| 字符集 | `utf8mb4` |
-
-查看数据库表：
-
-```sh
-docker compose exec mysql mysql -uroot -proot laravel -e 'SHOW TABLES;'
+```bash
+docker compose build
+docker compose run --rm --no-deps backend php artisan key:generate
 ```
 
-## 日常操作
+仅在首次创建环境文件后生成 APP_KEY；已有密钥不要随意更换，否则旧 Cookie、Session 和加密数据会失效。前端 Dockerfile 自动执行 npm ci 和 production 构建，最终静态镜像只包含 dist。
 
-```sh
-# 启动和停止（停止容器不删除数据库）
+## 5. 启动服务与初始化新库
+
+```bash
 docker compose up -d
-docker compose down
-
-# 拉取应用日志
-docker compose logs -f app
-docker compose logs -f mysql
-
-# 更新数据库结构和示例数据
-docker compose exec app php artisan migrate --force
-docker compose exec app php artisan db:seed --force
+docker compose exec -T backend php artisan migrate --seed
 ```
 
-MySQL 数据保存在 Docker 命名卷 `mysql57_data`。不要执行 `docker compose down -v`，除非确认要永久删除本地数据库数据。
+新 Compose project 使用独立 `life-insurance-separated_mysql57_data` volume，不复用旧项目 volume。迁移命令只适用于该新环境；旧业务数据导入需要先备份并明确来源。不要清空原库或删除旧 volume。
 
-## 常见问题
+样例 120 条申请；新 local/testing 用户表为空时创建管理员 `admin@example.com` / `password`。Seeder 不覆盖已有账号。
 
-- **Docker 命令无法连接：** 确认 Docker Desktop 已启动，再运行 `docker compose ps`。
-- **端口已被占用：** 本项目默认使用本机 `8000` 和 `3306` 端口；先确认其他服务未占用。
-- **提示缺少 `vendor/autoload.php`：** 在项目根目录重新执行 Composer 安装命令：
-  `docker run --rm -v "$PWD":/app -w /app composer:2.2 install`
-- **页面提示应用密钥缺失：** 执行 `docker compose run --rm app php artisan key:generate`，再启动应用。
-- **数据库尚未就绪：** 检查 `docker compose ps` 与 `docker compose logs mysql`，待 MySQL 健康后再运行迁移。
+打开 `http://localhost:8080/login`，确认日文登录、列表和权限。后端 `http://localhost:8001/api/v1/auth/csrf` 返回 204；直接访问后端 `/login` 返回 JSON 404。
+
+## 6. 创建测试库与测试
+
+```bash
+docker compose exec -T mysql mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS laravel_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+docker compose exec -T backend php vendor/bin/phpunit
+```
+
+PHPUnit 的 RefreshDatabase 只使用 laravel_testing，不能改为开发库。
+
+前端使用 Node 14/npm 6，进入 frontend：
+
+```bash
+npm ci
+npm test
+npm run development
+npm run production
+npm run build-storybook
+```
+
+也可从根目录使用 Docker 固定 Node：
+
+```bash
+docker run --rm -v "$PWD/frontend:/frontend" -w /frontend node:14.21.3-buster npm ci
+docker run --rm -v "$PWD/frontend:/frontend" -w /frontend node:14.21.3-buster npm test
+```
+
+## 7. 前端开发与直连
+
+`frontend/npm run dev` 先构建再启动 Node 标准库静态服务，默认代理到 `http://localhost:8001`。实际命令应在 frontend 目录运行：
+
+```bash
+npm run dev
+```
+
+若默认 8080 已由 Compose 使用：
+
+```bash
+PORT=8082 npm run dev
+```
+
+将 `http://localhost:8082` 加入 Compose 后端 CORS 环境变量并重建容器。热更新未启用；另开终端 `npm run watch` 后手动刷新。
+
+跨端口直接调用后端：
+
+```bash
+MIX_API_BASE_URL=http://localhost:8001 docker compose build frontend
+docker compose up -d --no-deps frontend
+```
+
+此时浏览器向 8001 发 API 请求；withCredentials 和 X-XSRF-TOKEN 由共用 client 管理。默认 CORS 允许 localhost:8080/8081，额外 origin 要显式添加。恢复代理模式时取消 MIX_API_BASE_URL 并重新构建 frontend。不要混用 localhost 和 127.0.0.1。
+
+## 8. 邮件和常见问题
+
+- 密码重置链接由后端 FRONTEND_URL 生成。实际发送需正确 SMTP、端口、账号与 TLS 配置；本地通知/日志验证不等于真实送达。
+- 419：刷新页面获取新 CSRF Cookie，不自动重复新增、修改或删除。
+- 401：登录或重新登录；已标记删除账号也会被拒绝。
+- CORS：检查浏览器 origin、后端允许列表、凭证和统一 hostname。
+- 502：后端服务未就绪；检查 `docker compose logs backend`。
+- 文件迁移后原 8000 服务的旧挂载配置不可直接使用。数据仍在原 volume；分离版入口为 8080/8001。
+- 停止分离服务可使用 `docker compose stop`，保留数据库 volume。
+
+PHP Artisan serve 和此 Compose 用于开发/验收，不代表正式生产部署已加固。

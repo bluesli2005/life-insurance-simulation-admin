@@ -2,7 +2,7 @@
     <AuthForm
         title="パスワードの再確認"
         description="続行するには、現在のパスワードを入力してください。"
-        action="/password/confirm"
+        action="/auth/password/confirm"
         submit-label="確認"
         :fields="fields"
         @success="goToAdmin"
@@ -19,7 +19,7 @@ export default {
     },
     methods: {
         goToAdmin() {
-            window.location.assign('/admin/applications');
+            this.$router.push('/admin/applications');
         },
     },
 };

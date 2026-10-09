@@ -13,6 +13,15 @@ class VerifyCsrfToken extends Middleware
      */
     protected $addHttpCookie = true;
 
+    protected function getTokenFromRequest($request)
+    {
+        try {
+            return parent::getTokenFromRequest($request);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $exception) {
+            return null;
+        }
+    }
+
     /**
      * The URIs that should be excluded from CSRF verification.
      *
