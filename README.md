@@ -24,10 +24,12 @@ npm ci
 npm run dev
 npm run production
 npm test
+npm run test:coverage
 
 # 后端测试（使用独立的 laravel_testing 数据库）
 docker compose exec -T mysql mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS laravel_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
 docker compose exec -T app php vendor/bin/phpunit
+npm run test:php:coverage
 ```
 
 ## 数据库
@@ -60,3 +62,4 @@ docker compose exec mysql mysql -uroot -proot laravel -e 'SHOW TABLES; DESCRIBE 
 ```
 
 测试使用独立数据库 `laravel_testing`，PHPUnit 会刷新该库。不要把测试环境指向开发库 `laravel`。
+PHP 覆盖率使用 Docker PHP 镜像中的 PCOV。Dockerfile 更新后执行 `docker compose up -d --build app`；HTML 报告输出到 `coverage/php`。

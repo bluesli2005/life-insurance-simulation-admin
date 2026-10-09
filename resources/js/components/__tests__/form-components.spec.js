@@ -50,7 +50,27 @@ describe('form components', () => {
         });
 
         expect(wrapper.text()).toContain('この申込番号はすでに登録されています。');
+        await wrapper.find('[name="application_number"]').setValue('APP-001');
+        await wrapper.find('[name="applicant_name"]').setValue('申込 太郎');
+        await wrapper.find('[name="insured_name"]').setValue('被保険者 花子');
+        await wrapper.find('[name="insured_birth_date"]').setValue('1990-01-01');
+        await wrapper.find('[name="coverage_amount"]').setValue('1000000');
+        await wrapper.find('[name="premium_amount"]').setValue('10000');
+        await wrapper.find('[name="effective_date"]').setValue('2026-10-09');
         await wrapper.find('form').trigger('submit');
         expect(wrapper.emitted('submit')[0][0].currency).toBe('JPY');
+    });
+
+    test('application form shows Japanese required errors with the shared error component', async () => {
+        const wrapper = mount(SimulationApplicationForm, {
+            stubs: { 'router-link': { template: '<a><slot /></a>' } },
+        });
+
+        await wrapper.find('[name="application_number"]').setValue('');
+        await wrapper.find('form').trigger('submit');
+
+        expect(wrapper.text()).toContain('申込番号を入力してください。');
+        expect(wrapper.find('.field-error').text()).toBe('申込番号を入力してください。');
+        expect(wrapper.emitted('submit')).toBeUndefined();
     });
 });

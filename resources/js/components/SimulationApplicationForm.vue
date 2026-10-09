@@ -1,5 +1,5 @@
 <template>
-    <form class="application-form" @submit.prevent="submit">
+    <form class="application-form" novalidate @submit.prevent="submit">
         <div class="form-grid">
             <div class="field-group">
                 <BaseInput v-model="form.application_number" name="application_number" label="申込番号" :maxlength="50" required />
@@ -14,7 +14,7 @@
                 <BaseErrorMessage :message="firstError('insured_name')" />
             </div>
             <div class="field-group">
-                <BaseInput v-model="form.insured_birth_date" name="insured_birth_date" label="被保険者生年月日" type="date" :max="today" required />
+                <BaseInput v-model="form.insured_birth_date" name="insured_birth_date" label="被保険者生年月日1234" type="date" :max="today" required />
                 <BaseErrorMessage :message="firstError('insured_birth_date')" />
             </div>
             <div class="field-group">
@@ -76,6 +76,7 @@ export default {
     data() {
         return {
             form: this.emptyForm(),
+            requiredErrors: {},
             statusOptions: [
                 { value: 'draft', label: '下書き' },
                 { value: 'submitted', label: '申込済み' },
@@ -119,9 +120,28 @@ export default {
             return new Date().toISOString().slice(0, 10);
         },
         firstError(field) {
-            return this.errors[field] ? this.errors[field][0] : '';
+            return this.requiredErrors[field] || (this.errors[field] ? this.errors[field][0] : '');
         },
         submit() {
+            const requiredFields = {
+                application_number: '申込番号',
+                applicant_name: '申込者氏名',
+                insured_name: '被保険者氏名',
+                insured_birth_date: '被保険者生年月日',
+                coverage_amount: '保険金額',
+                premium_amount: '保険料',
+                currency: '通貨',
+                status: 'ステータス',
+                effective_date: '適用開始日',
+            };
+            this.requiredErrors = Object.keys(requiredFields).reduce((errors, field) => {
+                if (!String(this.form[field] || '').trim()) {
+                    errors[field] = `${requiredFields[field]}を入力してください。`;
+                }
+                return errors;
+            }, {});
+            if (Object.keys(this.requiredErrors).length) return;
+
             this.$emit('submit', Object.assign({}, this.form));
         },
     },

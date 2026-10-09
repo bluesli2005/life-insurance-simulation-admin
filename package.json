@@ -12,7 +12,10 @@
         "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --disable-host-check --config=node_modules/laravel-mix/setup/webpack.config.js",
         "prod": "npm run production",
         "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --config=node_modules/laravel-mix/setup/webpack.config.js",
-        "test": "jest --runInBand"
+        "test": "jest --runInBand",
+        "test:coverage": "jest --runInBand --coverage --coverageDirectory=coverage",
+        "test:php": "docker compose exec -T app php vendor/bin/phpunit",
+        "test:php:coverage": "docker compose exec -T app php vendor/bin/phpunit --coverage-text --coverage-html=coverage/php"
     },
     "devDependencies": {
         "@vue/test-utils": "1.3.6",
