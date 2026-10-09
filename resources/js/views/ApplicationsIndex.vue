@@ -5,7 +5,7 @@
                 <h2>申込一覧</h2>
                 <p class="muted">保険シミュレーションの申込を検索・管理します。</p>
             </div>
-            <router-link class="button button-primary" to="/admin/applications/create">申込登録</router-link>
+            <router-link v-if="canEdit" class="button button-primary" to="/admin/applications/create">申込登録</router-link>
         </div>
 
         <form class="filter-panel" @submit.prevent="search">
@@ -79,6 +79,7 @@ export default {
         };
     },
     computed: Object.assign({}, mapState(['applications', 'pagination', 'loading', 'error']), {
+        canEdit() { return this.$store.state.session.can_write_applications; },
         currentPage() { return this.pagination.current_page || 1; },
         lastPage() { return this.pagination.last_page || 1; },
         perPage() { return this.pagination.per_page || 10; },

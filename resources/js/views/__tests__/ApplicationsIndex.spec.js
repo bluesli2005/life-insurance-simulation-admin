@@ -11,6 +11,7 @@ describe('ApplicationsIndex', () => {
         };
         const store = new Vuex.Store({
             state: {
+                session: { can_write_applications: true },
                 applications: [],
                 pagination: { current_page: 1, last_page: 2, per_page: 10, total: 12, from: 1, to: 10 },
                 filters: { search: '', status: '', per_page: 10 },
@@ -40,5 +41,21 @@ describe('ApplicationsIndex', () => {
             per_page: 10,
             page: 1,
         });
+    });
+
+    test('viewer does not see the create button', async () => {
+        const localVue = createLocalVue();
+        localVue.use(Vuex);
+        const store = new Vuex.Store({
+            state: {
+                session: { can_write_applications: false },
+                applications: [], pagination: {}, filters: { search: '', status: '' }, loading: false, error: '',
+            },
+            actions: { fetchApplications: jest.fn().mockResolvedValue() },
+        });
+        const wrapper = mount(ApplicationsIndex, {
+            localVue, store, stubs: { 'router-link': { template: '<a><slot /></a>' } },
+        });
+        expect(wrapper.text()).not.toContain('申込登録');
     });
 });

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\SimulationApplication;
+use App\Role;
 use App\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,6 +20,7 @@ class SimulationApplicationsApiTest extends TestCase
             'name' => '管理者',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
+            'role_id' => Role::where('code', User::ROLE_SUPER_ADMIN)->value('id'),
         ]));
     }
 

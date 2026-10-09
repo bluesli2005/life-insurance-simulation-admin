@@ -9,8 +9,8 @@
                         <p class="muted">{{ application.application_number }}</p>
                     </div>
                     <div class="heading-actions">
-                        <router-link class="button button-secondary" :to="`${basePath}/edit`">編集</router-link>
-                        <BaseButton variant="danger" :disabled="deleting" @click="deleteApplication">削除</BaseButton>
+                        <router-link v-if="canEdit" class="button button-secondary" :to="`${basePath}/edit`">編集</router-link>
+                        <BaseButton v-if="canDelete" variant="danger" :disabled="deleting" @click="deleteApplication">削除</BaseButton>
                     </div>
                 </div>
 
@@ -50,6 +50,8 @@ export default {
         return { application: null, loading: true, deleting: false, error: '' };
     },
     computed: {
+        canEdit() { return this.$store.state.session.can_write_applications; },
+        canDelete() { return this.$store.state.session.can_delete_applications; },
         basePath() {
             return `/admin/applications/${this.$route.params.id}`;
         },

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\VerifiesEmails;
+use Illuminate\Http\Request;
 
 class VerificationController extends Controller
 {
@@ -27,6 +28,11 @@ class VerificationController extends Controller
      * @var string
      */
     protected $redirectTo = RouteServiceProvider::HOME;
+
+    public function show(Request $request)
+    {
+        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
+    }
 
     /**
      * Create a new controller instance.

@@ -34,8 +34,7 @@ body {
   gap: 12px;
 }
 
-.login-card input[type=email],
-.login-card input[type=password] {
+.login-card input:not([type=checkbox]):not([type=hidden]) {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #cbd5e1;
@@ -52,6 +51,11 @@ body {
   color: #fff;
   font: inherit;
   cursor: pointer;
+}
+
+.login-card button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .remember-label {
@@ -75,6 +79,42 @@ body {
 .login-status {
   background: #eff6ff;
   color: #1d4ed8;
+}
+
+.auth-card form {
+  margin-top: 20px;
+}
+
+.auth-description {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.auth-field {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-field-error {
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.auth-links {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.auth-links a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
 }
 
 .page-section {

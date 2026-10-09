@@ -4,24 +4,42 @@
             <h1>シミュレーション申込・管理</h1>
             <nav>
                 <router-link to="/admin/applications">申込一覧</router-link>
+                <router-link v-if="canManageUsers" to="/admin/users">権限管理</router-link>
+                <router-link to="/admin/password">パスワード変更</router-link>
+                <span>{{ roleLabel }}</span>
                 <span>{{ userName }}</span>
-                <form method="POST" action="/logout">
-                    <input type="hidden" name="_token" :value="csrfToken">
-                    <button type="submit">ログアウト</button>
-                </form>
+                <button type="button" :disabled="loggingOut" @click="logout">ログアウト</button>
             </nav>
         </header>
-        <main class="admin-main"><router-view /></main>
+        <main class="admin-main">
+            <p v-if="logoutError" class="notice notice-error" role="alert">{{ logoutError }}</p>
+            <router-view />
+        </main>
     </div>
 </template>
 
 <script>
 export default {
     data() {
-        return {
-            userName: document.getElementById('app').dataset.userName,
-            csrfToken: document.querySelector('meta[name="csrf-token"]').content,
-        };
+        return { loggingOut: false, logoutError: '' };
+    },
+    computed: {
+        userName() { return this.$store.state.session.user_name; },
+        roleLabel() { return this.$store.state.session.role_name; },
+        canManageUsers() { return this.$store.state.session.can_manage_users; },
+    },
+    methods: {
+        async logout() {
+            this.loggingOut = true;
+            this.logoutError = '';
+            try {
+                await window.axios.post('/logout', {}, { headers: { Accept: 'application/json' } });
+                window.location.assign('/login');
+            } catch (error) {
+                this.logoutError = 'ログアウトできませんでした。再度お試しください。';
+                this.loggingOut = false;
+            }
+        },
     },
 };
 </script>

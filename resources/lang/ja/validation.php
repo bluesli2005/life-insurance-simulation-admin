@@ -2,10 +2,12 @@
 
 return [
     'accepted' => ':attributeを承認してください。',
+    'confirmed' => ':attributeが確認用の値と一致しません。',
     'after_or_equal' => ':attributeには:date以降の日付を指定してください。',
     'before_or_equal' => ':attributeには:date以前の日付を指定してください。',
     'date' => ':attributeには有効な日付を指定してください。',
     'email' => ':attributeには有効なメールアドレスを指定してください。',
+    'exists' => '選択された:attributeは無効です。',
     'gt' => [
         'numeric' => ':attributeは:valueより大きい値を指定してください。',
     ],
@@ -17,15 +19,20 @@ return [
     ],
     'min' => [
         'numeric' => ':attributeは:min以上で指定してください。',
+        'string' => ':attributeは:min文字以上で指定してください。',
     ],
     'numeric' => ':attributeは数値で指定してください。',
+    'password' => 'パスワードが正しくありません。',
     'regex' => ':attributeの形式が正しくありません。',
     'required' => ':attributeは必須です。',
     'string' => ':attributeは文字列で指定してください。',
     'unique' => 'この:attributeはすでに登録されています。',
     'attributes' => [
         'email' => 'メールアドレス',
+        'name' => '氏名',
         'password' => 'パスワード',
+        'current_password' => '現在のパスワード',
+        'password_confirmation' => 'パスワード（確認）',
         'application_number' => '申込番号',
         'applicant_name' => '申込者氏名',
         'insured_name' => '被保険者氏名',

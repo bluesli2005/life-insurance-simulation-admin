@@ -28,6 +28,11 @@ class ConfirmPasswordController extends Controller
      */
     protected $redirectTo = RouteServiceProvider::HOME;
 
+    public function showConfirmForm()
+    {
+        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
+    }
+
     /**
      * Create a new controller instance.
      *

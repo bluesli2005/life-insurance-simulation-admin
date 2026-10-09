@@ -53,7 +53,11 @@ docker compose up -d app
 - 邮箱：`admin@example.com`
 - 密码：`password`
 
-可在 `.env` 设置 `ADMIN_EMAIL`、`ADMIN_PASSWORD` 后再运行 Seeder，以使用自定义本地账号。此默认账号仅供本地开发，不可用于生产环境。
+可在首次运行 Seeder 前于 `.env` 设置 `ADMIN_EMAIL`、`ADMIN_PASSWORD`，以创建自定义本地初始账号。只要 `users` 表已有账号，重跑 Seeder 不会改写邮箱或密码。此默认账号仅供本地开发，不可用于生产环境。
+
+登录、注册及密码相关页面由 Vue 渲染。可在 `/register` 注册账号，在登录后的 `/admin/password` 修改密码。角色定义和权限保存在独立的 `roles` 表，用户通过 `users.role_id` 关联；新账号默认 `viewer`，只能查看申入。`editor` 可新增和编辑；`super_admin` 还可删除申入，并在 `/admin/users` 分配角色。默认 `admin@example.com` 为最高管理者。邮箱验证和注册审核仍关闭。若要接收密码重置邮件，请在 `.env` 配置 `MAIL_HOST`、`MAIL_PORT`、`MAIL_USERNAME`、`MAIL_PASSWORD`、`MAIL_ENCRYPTION` 和 `MAIL_FROM_ADDRESS`，然后重启应用容器。
+
+所有页面经 Laravel 路由返回同一份静态 `resources/spa.html`，由 Vue 显示；不需要 Blade 参与页面渲染。修改 Vue/样式后运行 `npm run dev` 重新生成前端资源，再刷新浏览器。
 
 ## 数据库连接信息
 

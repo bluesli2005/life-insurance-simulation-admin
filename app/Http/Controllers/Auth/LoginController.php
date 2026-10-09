@@ -41,7 +41,7 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-        return view('auth.login');
+        return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
     }
 
     /**

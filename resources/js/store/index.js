@@ -6,6 +6,7 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
     state: {
+        session: null,
         applications: [],
         pagination: {
             current_page: 1,
@@ -22,6 +23,9 @@ export default new Vuex.Store({
         error: '',
     },
     mutations: {
+        setSession(state, session) {
+            state.session = session;
+        },
         setApplications(state, payload) {
             state.applications = payload.data;
             state.pagination = payload.meta;

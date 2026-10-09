@@ -60,7 +60,7 @@ PHP 7.4、Laravel 6、Vue 2 和 Node.js 14 均属于停止官方维护的旧版�
 ```text
 浏览器
   -> Laravel Web Route
-  -> Blade 登录页面 / Vue 2 管理页面入口
+  -> 静态 resources/spa.html / Vue 2 认证与管理页面入口
   -> Vue Router
   -> Vuex
   -> Axios
@@ -105,13 +105,18 @@ life-insurance-simulation-admin/
 
 使用 Laravel Session 认证和 `laravel/ui` 1.x 提供的 Laravel 6 兼容认证基础。
 
-最低限度范围：
+当前认证范围（阶段 B 初版方案已按后续需求调整）：
 
 - 管理员登录。
 - 管理员登出。
 - 未登录访问管理页面时跳转到登录页。
-- 不开放用户注册。
-- 不实现忘记密码和邮件发送。
+- 开放管理员注册；账号存储在 `users` 表，密码以哈希形式保存。
+- 注册账号默认 `viewer`；`editor` 可新增/修改申入，`super_admin` 还可删除申入并管理用户角色。`admin@example.com` 为最高管理者；后端 Gate 按数据库角色授权。
+- 角色及权限定义保存在独立的 `roles` 表，`users.role_id` 外键关联；不再以 `users.role` 字符串作为权限来源。
+- 登录后可验证当前密码并修改密码；开发 Seeder 仅在 `users` 表为空时创建初始账号。
+- 邮箱验证组件已准备，路由保持关闭。
+- 支持忘记密码邮件和密码重置；实际投递需要有效 SMTP 配置。
+- 支持已登录用户的密码二次确认。
 - 登录失败时显示日文错误。
 - 登录成功后进入申込一览。
 - 所有新增、修改和删除请求使用 CSRF 保护。
@@ -130,12 +135,18 @@ life-insurance-simulation-admin/
 | 路径 | 页面 | 主要功能 |
 | --- | --- | --- |
 | `/login` | ログイン | 管理员登录 |
+| `/register` | 管理者登録 | 管理员注册 |
+| `/password/reset` | パスワード再設定 | 申请密码重置邮件 |
+| `/password/reset/{token}` | 新しいパスワードの設定 | 使用邮件令牌重置密码 |
+| `/password/confirm` | パスワードの再確認 | 确认当前管理员密码 |
+| `/admin/password` | パスワード変更 | 登录后修改密码 |
+| `/admin/users` | 権限管理 | 最高管理者分配用户角色 |
 | `/admin/applications` | 申込一覧 | 搜索、筛选、分页、进入详情 |
 | `/admin/applications/create` | 申込登録 | 新建申请 |
 | `/admin/applications/:id` | 申込詳細 | 显示申请详情、编辑和删除入口 |
 | `/admin/applications/:id/edit` | 申込編集 | 修改申请 |
 
-管理页面使用 Vue Router。Laravel 为 `/admin` 下的 Vue 路由提供同一个 Blade 入口，并使用 `auth` middleware 保护。
+管理页面和认证页面均由 Vue 管理。Laravel 通过不含模板语法的 `resources/spa.html` 提供挂载点，不再渲染 Blade；`/admin` 路由使用 `auth` middleware 保护。`/register` 已开放，`/email/verify` 仍为 404。新注册账号可进入后台查看申入，但无写入权限；注册审核仍未启用。
 
 ## 8. 页面显示文字
 
@@ -179,12 +190,24 @@ life-insurance-simulation-admin/
 | `name` | varchar(255) | 必填 |
 | `email` | varchar(255) | 必填、唯一 |
 | `password` | varchar(255) | 必填、Hash 保存 |
+| `role_id` | unsigned bigint | 必填、外键引用 `roles.id`，默认查看者 |
 | `remember_token` | varchar(100) nullable | Laravel 认证字段 |
 | `created_at` / `updated_at` | timestamp | Laravel 时间戳 |
 
-当前只有管理员用户，不增加角色表和权限表。
+### 9.2 `roles`
 
-### 9.2 `simulation_applications`
+| 字段 | 类型 | 规则 |
+| --- | --- | --- |
+| `id` | bigint | 主键 |
+| `code` | varchar(255) | 唯一；`viewer`、`editor`、`super_admin` |
+| `name` | varchar(255) | 日文显示名称 |
+| `can_write_applications` | boolean | 新增、修改申入 |
+| `can_delete_applications` | boolean | 删除申入 |
+| `can_manage_users` | boolean | 查询用户并分配角色 |
+
+三个角色定义随迁移写入数据库。已登录用户均可查看申入；Gate 读取上述权限字段，前端读取同一授权结果控制操作入口。
+
+### 9.3 `simulation_applications`
 
 | 字段 | 类型 | 规则 |
 | --- | --- | --- |
@@ -277,7 +300,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - 申込詳細。
 - 申込編集。
 
-未知管理路径回到申込一覧。Laravel 登录页不由 Vue Router 管理。
+未知管理路径回到申込一覧。认证 Router 开放登录、注册、确认密码和找回/重置密码路径；邮箱验证页面暂不接入路由。
 
 ### 12.2 Vuex
 
@@ -417,7 +440,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 
 ### 阶段 B：登录功能
 
-状态：已完成
+状态：初版已完成，后续认证页面已扩展
 
 内容：
 
@@ -432,7 +455,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 
 - 管理员可以登录和登出。
 - 未登录用户不能访问管理页面和业务 JSON。
-- 注册页面不存在。
+- 注册后可使用数据库中的新账号登录；邮箱验证路由仍关闭。
 - 默认管理员只能在本地和测试环境使用。
 
 回滚：移除认证路由和脚手架，保留阶段 A 基础项目。
@@ -442,17 +465,47 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - 增加日文登录页、登录/登出路由和表单验证提示。
 - Composer 开发依赖已安装 Laravel UI 1.3.0。
 - `/admin/*` 管理入口通过 `auth` 中间件保护，未登录访问跳转到 `/login`。
-- 未启用注册和密码重置；对应页面返回 404。
-- 增加开发管理员 Seeder，只允许在 `local` 和 `testing` 环境执行，支持 `ADMIN_EMAIL`、`ADMIN_PASSWORD` 环境变量；示例账号为 `admin@example.com` / `password`，仅限本地环境。
+- 阶段 B 初版关闭注册和密码重置；后续开放注册、密码找回、重置、确认和修改页面；邮箱验证仍关闭。
+- 开发管理员 Seeder 只允许在 `local` 和 `testing` 环境执行；仅在 `users` 表为空时读取 `ADMIN_EMAIL`、`ADMIN_PASSWORD` 创建初始账号，之后以数据库账号信息为准。
 - 默认语言设为日文。
 
 验证结果：
 
 - 数据库迁移和默认开发管理员 Seeder 成功。
 - `/login` 返回 200；未登录访问 `/admin/applications` 返回 302 并跳转 `/login`。
-- `/register` 和 `/password/reset` 返回 404。
+- `/register` 可访问并将新账号写入数据库；`/email/verify` 返回 404；认证页面由 Vue 组件渲染。
+- 重置密码邮件由 Laravel 密码代理处理；实际投递需配置 SMTP。
+- 当前 PHPUnit：39 项测试、181 条断言通过；PHP 类/方法/行覆盖率均为 100%（23/23、49/49、208/208）。
+- 当前 Jest：6 个测试套件、19 项测试通过；项目整体行覆盖率为 54.12%。
+- 注册、密码确认/找回/重置及登录后的密码修改均有后端路由；邮箱验证路由保持关闭。
 - `php artisan route:list` 确认 `/admin/{path?}` 使用 `web,auth` 中间件。
-- `npm run production` 成功。
+- `npm run development` 成功，并已更新本地可读的前端资源。
+
+后续角色权限扩展（2026-10-09）：
+
+- 新增 `users.role` 迁移，默认 `viewer`；将现有 `admin@example.com` 提升为 `super_admin`。本地数据库已执行迁移并核对该账号角色。新安装时 Seeder 创建的初始账号为 `super_admin`。
+- `viewer` 只读，`editor` 可读/新增/编辑，`super_admin` 还可删除和管理角色。公开注册不能提交角色提权；后端以 Gate 拒绝越权 API 请求（403）。
+- `/admin/users` 供最高管理者分配角色。不能降级 `admin@example.com` 或最后一名最高管理者；修改结果写入数据库。
+- 验收：角色边界、非法角色值、最高管理者保护、注册默认只读，均有后端测试；Vue 权限入口及角色保存有前端测试。
+- 风险：公开注册尚无邮箱验证和人工审核；上线前应另加限制。现有旧版 PHP/Laravel/Vue 仍有维护风险。
+- 回滚：先导出 `users` 表及角色，再回退 `2026_10_09_000000_add_role_to_users_table` 迁移和相应应用代码；回退迁移会删除全部角色数据，不应直接在生产库执行。
+
+角色表迁移（2026-10-09）：
+
+- 新增 `roles` 表，存放角色代码、日文名称和三个权限开关；`users.role_id` 外键关联，默认指向 `viewer`。迁移将旧 `users.role` 值逐一转为外键后才删除旧字段，未知旧值按只读处理。
+- 已在本地开发库执行迁移：三条角色记录正确，`admin@example.com` 关联 `super_admin`；账号邮箱和密码未改。新安装按两个迁移顺序自动完成。
+- `/admin/users` 从数据库获取角色选项并显示权限矩阵；页面只负责分配已有角色，不提供在线修改角色定义或权限开关。若后续需要编辑角色权限，须增加安全校验和单独验收。
+- 验收：PHPUnit 38 项、167 条断言通过，`app/` 统计范围内的类/方法/行覆盖率均为 100%；Jest 18 项通过，开发构建通过。测试确认修改 `roles` 权限字段会改变实际后端授权。
+- 回滚：先备份 `users` 与 `roles`。回退 `2026_10_09_010000_create_roles_table` 会把角色代码写回 `users.role` 并删除角色表和权限开关；如果角色权限曾定制，回退将丢失这些权限值，不得无备份执行。
+
+页面去 Blade 扩展（2026-10-09）：
+
+- 所有实际页面路由改为返回同一份静态 `resources/spa.html`，由 Vue 根据 URL 渲染认证或后台界面；不再调用 `view()`、`Route::view()`。历史阶段 A 的 Blade 入口描述仅记录当时实现，当前以本节为准。
+- 后台启动前请求受登录保护的 `GET /admin/api/v1/session` 获取用户名、日文角色名和 Gate 权限，写入 Vuex 后再挂载页面；不再通过 Blade 向 HTML 注入状态。
+- 表单与退出登录经 Axios 发送同源请求，使用 Laravel 发出的 `XSRF-TOKEN` Cookie。静态页面禁缓存，避免旧 CSRF 页面；真实 HTTP 匿名请求验证错误登录返回 422 而非 419。
+- 原 `admin.blade.php`、`auth/login.blade.php`、`welcome.blade.php` 当时未删除，现已按用户确认删除；`resources/views/.gitkeep` 仅保留空目录。其他脚手架文件未动。
+- 删除后执行 `php artisan view:clear` 清除已编译的旧视图；PHPUnit 39 项、181 条断言通过。实际 HTTP `/login` 返回 200，未登录 `/admin/applications` 返回 302。已提交过的旧模板版本可从 Git 恢复；删除前未提交的模板改动未单独备份。
+- 验收：PHPUnit 39 项、181 条断言通过，`app/` 统计范围内类/方法/行覆盖率 100%；Jest 19 项通过（整体行覆盖率 54.12%），前端开发构建通过。静态页面有 XSRF Cookie；真实匿名 POST 错误登录返回 422，未出现 419。回滚时恢复原页面路由、Controller 返回值及 Blade 状态注入，并恢复前端 CSRF 提交方式。
 
 ### 阶段 C：数据库和后端
 
@@ -556,7 +609,7 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - README 提供首次依赖安装、环境初始化、迁移、Seeder 和启动步骤；Node 14/npm 6 锁文件安装已在临时环境验证。
 - 后端测试、前端测试和生产构建通过。
 - 项目不存在 Storybook 依赖和配置。
-- 已确认 Laravel Welcome 模板和未使用默认脚手架仍在仓库；按用户要求保留，并在架构文档注明。
+- 阶段 E 当时保留 Laravel Welcome 模板和未使用默认脚手架；后续已按用户新要求删除 Welcome 模板。
 - 项目目录在计划中使用 `{USERPATH}`，README/架构文档使用仓库相对链接。
 
 验证结果：
@@ -566,15 +619,14 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - 当前项目：Jest 2 个套件、5 项测试通过；PHPUnit 9 项测试、47 条断言通过；`npm run development` 和 `npm run production` 均成功。
 - 数据库迁移状态全部为已执行；开发库 120 条申请，英文姓名/备注记录数为 0，空备注数为 0。
 - MySQL Compose 默认字符集/排序规则已固定为 `utf8mb4` / `utf8mb4_unicode_ci`；本地开发库默认字符集元数据同步完成，表和记录未重建或改写。
-- 未发现 Storybook 依赖或配置。默认 Welcome 页面和 Laravel 脚手架文件按用户要求保留，并在 [ARCHITECTURE.md](ARCHITECTURE.md) 记录。
+- 未发现 Storybook 依赖或配置。阶段 E 当时保留默认 Welcome 页面；后续删除模板的结果见上文，并在 [ARCHITECTURE.md](ARCHITECTURE.md) 记录。
 
 回滚：文档和清理操作按 Git diff 单独恢复，不影响已验证功能。
 
 ## 16. 不在本次范围
 
-- 公开注册。
-- 忘记密码和邮件发送。
-- 多角色权限。
+- 邮箱验证和注册审核。
+- 可在线编辑角色定义与权限开关的页面。
 - 审批流程和审批历史。
 - 负责人分配。
 - 软删除和审计日志。
