@@ -111,7 +111,7 @@ life-insurance-simulation-admin/
 - 管理员登出。
 - 未登录访问管理页面时跳转到登录页。
 - 开放管理员注册；账号存储在 `users` 表，密码以哈希形式保存。
-- 注册账号默认 `viewer`；`editor` 可新增/修改申入，`super_admin` 还可删除申入并管理用户角色。`admin@example.com` 为最高管理者；后端 Gate 按数据库角色授权。
+- 注册账号默认 `viewer`；`editor` 可新增/修改申入，`super_admin` 还可删除申入、管理用户角色，并对其他用户执行可恢复的逻辑删除。`admin@example.com` 为最高管理者；后端 Gate 按数据库角色授权。
 - 角色及权限定义保存在独立的 `roles` 表，`users.role_id` 外键关联；不再以 `users.role` 字符串作为权限来源。
 - 登录后可验证当前密码并修改密码；开发 Seeder 仅在 `users` 表为空时创建初始账号。
 - 邮箱验证组件已准备，路由保持关闭。
@@ -191,6 +191,7 @@ life-insurance-simulation-admin/
 | `email` | varchar(255) | 必填、唯一 |
 | `password` | varchar(255) | 必填、Hash 保存 |
 | `role_id` | unsigned bigint | 必填、外键引用 `roles.id`，默认查看者 |
+| `status` | varchar(20) | 默认 `active`；逻辑删除为 `deleted`，可恢复 |
 | `remember_token` | varchar(100) nullable | Laravel 认证字段 |
 | `created_at` / `updated_at` | timestamp | Laravel 时间戳 |
 
@@ -497,6 +498,15 @@ DELETE /admin/api/v1/simulation-applications/{simulation_application}
 - `/admin/users` 从数据库获取角色选项并显示权限矩阵；页面只负责分配已有角色，不提供在线修改角色定义或权限开关。若后续需要编辑角色权限，须增加安全校验和单独验收。
 - 验收：PHPUnit 38 项、167 条断言通过，`app/` 统计范围内的类/方法/行覆盖率均为 100%；Jest 18 项通过，开发构建通过。测试确认修改 `roles` 权限字段会改变实际后端授权。
 - 回滚：先备份 `users` 与 `roles`。回退 `2026_10_09_010000_create_roles_table` 会把角色代码写回 `users.role` 并删除角色表和权限开关；如果角色权限曾定制，回退将丢失这些权限值，不得无备份执行。
+
+用户逻辑删除扩展（2026-10-09）：
+
+- `2026_10_09_020000_add_status_to_users_table` 为 `users` 增加默认 `active` 的 `status` 字段，已有账号保持可用；新安装执行 `php artisan migrate --force` 即可获得相同结构。
+- `/admin/users` 显示账号状态；最高管理者可确认后将其他账号标记为 `deleted`，也可恢复为 `active`。接口为 `PATCH /admin/api/v1/users/{id}/status`，只更新状态，不执行物理删除；用户及其关联数据保持原样。
+- 接口同时检查用户管理 Gate 和 `super_admin` 角色；其他角色即使获得用户管理权限也不能删除账号。禁止删除自己和 `admin@example.com`；最后一名可用最高管理者因此不会被删除。
+- `deleted` 账号不能登录、请求或使用密码重置，也不能凭旧会话继续访问受保护路由。恢复后仍使用原有账号和密码。
+- 验收：本地开发库迁移前后均为 2 条用户记录，迁移后均为 `active`，无账号丢失。覆盖逻辑删除/恢复、越权、受保护账号、旧会话、登录及密码重置；PHPUnit 44 项、209 条断言通过，`app/` 范围的类/方法/行覆盖率均为 100%；Jest 21 项通过，开发构建成功。
+- 回滚：先备份 `users`，将需要保留的已删除账号恢复为 `active` 后再回退此迁移及应用代码；回退迁移会删除 `status` 字段及全部删除状态，勿在生产库无备份执行。
 
 页面去 Blade 扩展（2026-10-09）：
 

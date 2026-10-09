@@ -13,6 +13,8 @@ class User extends Authenticatable
     public const ROLE_SUPER_ADMIN = 'super_admin';
     public const ROLE_EDITOR = 'editor';
     public const ROLE_VIEWER = 'viewer';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_DELETED = 'deleted';
 
     /**
      * The attributes that are mass assignable.
@@ -20,7 +22,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password', 'role_id',
+        'name', 'email', 'password', 'role_id', 'status',
     ];
 
     /**

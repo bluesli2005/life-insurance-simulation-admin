@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
@@ -33,6 +34,12 @@ class ResetPasswordController extends Controller
     public function showResetForm(Request $request, $token = null)
     {
         return response()->file(resource_path('spa.html'), ['Cache-Control' => 'no-store'])->setPrivate();
+    }
+
+    protected function credentials(Request $request)
+    {
+        return $request->only('email', 'password', 'password_confirmation', 'token')
+            + ['status' => User::STATUS_ACTIVE];
     }
 
     protected function sendResetResponse(Request $request, $response)

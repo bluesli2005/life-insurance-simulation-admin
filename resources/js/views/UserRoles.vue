@@ -1,22 +1,29 @@
 <template>
     <section class="page-section">
         <div class="page-heading"><h2>権限管理</h2></div>
-        <p class="muted">新規登録ユーザーは閲覧者です。最高管理者のみ権限を変更できます。</p>
+        <p class="muted">新規登録ユーザーは閲覧者です。削除してもデータは残り、ログインできなくなります。</p>
         <p v-if="error" class="notice notice-error" role="alert">{{ error }}</p>
         <p v-if="notice" class="notice" role="status">{{ notice }}</p>
         <div class="table-scroll">
             <table class="data-table">
-                <thead><tr><th>氏名</th><th>メールアドレス</th><th>権限</th><th>操作</th></tr></thead>
+                <thead><tr><th>氏名</th><th>メールアドレス</th><th>権限</th><th>状態</th><th>操作</th></tr></thead>
                 <tbody>
                     <tr v-for="user in users" :key="user.id">
                         <td>{{ user.name }}</td>
                         <td>{{ user.email }}</td>
                         <td>
-                            <select v-model="user.selectedRole" :disabled="user.email === 'admin@example.com'">
+                            <select v-model="user.selectedRole" :disabled="user.email === 'admin@example.com' || user.status === 'deleted'">
                                 <option v-for="role in roles" :key="role.code" :value="role.code">{{ role.name }}</option>
                             </select>
                         </td>
-                        <td><button class="button button-primary" :disabled="saving === user.id || user.selectedRole === user.role" @click="save(user)">保存</button></td>
+                        <td>{{ user.status === 'deleted' ? '削除済み' : '有効' }}</td>
+                        <td>
+                            <div class="heading-actions">
+                                <button class="button button-primary" :disabled="saving === user.id || user.status === 'deleted' || user.selectedRole === user.role" @click="save(user)">保存</button>
+                                <button v-if="canDeleteUsers && user.status === 'active' && user.id !== currentUserId && user.email !== 'admin@example.com'" class="button button-danger" :disabled="saving === user.id" @click="changeStatus(user, 'deleted')">削除</button>
+                                <button v-if="canDeleteUsers && user.status === 'deleted'" class="button button-secondary" :disabled="saving === user.id" @click="changeStatus(user, 'active')">復元</button>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -39,6 +46,10 @@
 
 <script>
 export default {
+    computed: {
+        currentUserId() { return this.$store.state.session.user_id; },
+        canDeleteUsers() { return this.$store.state.session.role_code === 'super_admin'; },
+    },
     data() {
         return { users: [], roles: [], saving: null, error: '', notice: '' };
     },
@@ -65,6 +76,22 @@ export default {
                 this.notice = '権限を変更しました。';
             } catch (error) {
                 this.error = error.response && error.response.data.message || '権限を変更できませんでした。';
+            } finally {
+                this.saving = null;
+            }
+        },
+        async changeStatus(user, status) {
+            if (status === 'deleted' && !window.confirm('このユーザーを削除しますか？データは残り、ログインできなくなります。')) return;
+
+            this.saving = user.id;
+            this.error = '';
+            this.notice = '';
+            try {
+                const response = await window.axios.patch(`/admin/api/v1/users/${user.id}/status`, { status });
+                user.status = response.data.data.status;
+                this.notice = status === 'deleted' ? 'ユーザーを削除しました。' : 'ユーザーを復元しました。';
+            } catch (error) {
+                this.error = error.response && error.response.data.message || 'ユーザーの状態を変更できませんでした。';
             } finally {
                 this.saving = null;
             }

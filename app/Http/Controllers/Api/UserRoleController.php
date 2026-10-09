@@ -32,7 +32,8 @@ class UserRoleController extends Controller
         $superRole = Role::where('code', User::ROLE_SUPER_ADMIN)->firstOrFail();
 
         return DB::transaction(function () use ($user, $selectedRole, $superRole) {
-            $superAdminIds = User::where('role_id', $superRole->id)->lockForUpdate()->pluck('id');
+            $superAdminIds = User::where('role_id', $superRole->id)
+                ->where('status', User::STATUS_ACTIVE)->lockForUpdate()->pluck('id');
             $user->refresh()->load('role');
 
             if ($user->role_id === $superRole->id && $selectedRole->id !== $superRole->id &&
@@ -47,6 +48,28 @@ class UserRoleController extends Controller
         });
     }
 
+    public function updateStatus(Request $request, User $user)
+    {
+        abort_unless($request->user()->role->code === User::ROLE_SUPER_ADMIN, 403);
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_DELETED])],
+        ]);
+
+        return DB::transaction(function () use ($request, $user, $data) {
+            $user->refresh()->load('role');
+
+            if ($data['status'] === User::STATUS_DELETED &&
+                ($user->id === $request->user()->id || $user->email === 'admin@example.com')) {
+                return response()->json(['message' => 'このユーザーは削除できません。'], 422);
+            }
+
+            $user->update(['status' => $data['status']]);
+
+            return response()->json(['data' => $this->userData($user)]);
+        });
+    }
+
     private function userData(User $user)
     {
         return [
@@ -54,6 +77,7 @@ class UserRoleController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role->code,
+            'status' => $user->status,
         ];
     }
 }

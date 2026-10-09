@@ -3492,8 +3492,23 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
+  computed: {
+    currentUserId: function currentUserId() {
+      return this.$store.state.session.user_id;
+    },
+    canDeleteUsers: function canDeleteUsers() {
+      return this.$store.state.session.role_code === 'super_admin';
+    }
+  },
   data: function data() {
     return {
       users: [],
@@ -3570,6 +3585,47 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
               return _context2.a(2);
           }
         }, _callee2, null, [[1, 3, 4, 5]]);
+      }))();
+    },
+    changeStatus: function changeStatus(user, status) {
+      var _this3 = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
+        var response, _t3;
+        return _regenerator().w(function (_context3) {
+          while (1) switch (_context3.p = _context3.n) {
+            case 0:
+              if (!(status === 'deleted' && !window.confirm('このユーザーを削除しますか？データは残り、ログインできなくなります。'))) {
+                _context3.n = 1;
+                break;
+              }
+              return _context3.a(2);
+            case 1:
+              _this3.saving = user.id;
+              _this3.error = '';
+              _this3.notice = '';
+              _context3.p = 2;
+              _context3.n = 3;
+              return window.axios.patch("/admin/api/v1/users/".concat(user.id, "/status"), {
+                status: status
+              });
+            case 3:
+              response = _context3.v;
+              user.status = response.data.data.status;
+              _this3.notice = status === 'deleted' ? 'ユーザーを削除しました。' : 'ユーザーを復元しました。';
+              _context3.n = 5;
+              break;
+            case 4:
+              _context3.p = 4;
+              _t3 = _context3.v;
+              _this3.error = _t3.response && _t3.response.data.message || 'ユーザーの状態を変更できませんでした。';
+            case 5:
+              _context3.p = 5;
+              _this3.saving = null;
+              return _context3.f(5);
+            case 6:
+              return _context3.a(2);
+          }
+        }, _callee3, null, [[2, 4, 5, 6]]);
       }))();
     }
   }
@@ -24069,7 +24125,7 @@ var render = function () {
     _vm._v(" "),
     _c("p", { staticClass: "muted" }, [
       _vm._v(
-        "新規登録ユーザーは閲覧者です。最高管理者のみ権限を変更できます。"
+        "新規登録ユーザーは閲覧者です。削除してもデータは残り、ログインできなくなります。"
       ),
     ]),
     _vm._v(" "),
@@ -24111,7 +24167,11 @@ var render = function () {
                         expression: "user.selectedRole",
                       },
                     ],
-                    attrs: { disabled: user.email === "admin@example.com" },
+                    attrs: {
+                      disabled:
+                        user.email === "admin@example.com" ||
+                        user.status === "deleted",
+                    },
                     on: {
                       change: function ($event) {
                         var $$selectedVal = Array.prototype.filter
@@ -24144,23 +24204,65 @@ var render = function () {
               ]),
               _vm._v(" "),
               _c("td", [
-                _c(
-                  "button",
-                  {
-                    staticClass: "button button-primary",
-                    attrs: {
-                      disabled:
-                        _vm.saving === user.id ||
-                        user.selectedRole === user.role,
-                    },
-                    on: {
-                      click: function ($event) {
-                        return _vm.save(user)
+                _vm._v(_vm._s(user.status === "deleted" ? "削除済み" : "有効")),
+              ]),
+              _vm._v(" "),
+              _c("td", [
+                _c("div", { staticClass: "heading-actions" }, [
+                  _c(
+                    "button",
+                    {
+                      staticClass: "button button-primary",
+                      attrs: {
+                        disabled:
+                          _vm.saving === user.id ||
+                          user.status === "deleted" ||
+                          user.selectedRole === user.role,
+                      },
+                      on: {
+                        click: function ($event) {
+                          return _vm.save(user)
+                        },
                       },
                     },
-                  },
-                  [_vm._v("保存")]
-                ),
+                    [_vm._v("保存")]
+                  ),
+                  _vm._v(" "),
+                  _vm.canDeleteUsers &&
+                  user.status === "active" &&
+                  user.id !== _vm.currentUserId &&
+                  user.email !== "admin@example.com"
+                    ? _c(
+                        "button",
+                        {
+                          staticClass: "button button-danger",
+                          attrs: { disabled: _vm.saving === user.id },
+                          on: {
+                            click: function ($event) {
+                              return _vm.changeStatus(user, "deleted")
+                            },
+                          },
+                        },
+                        [_vm._v("削除")]
+                      )
+                    : _vm._e(),
+                  _vm._v(" "),
+                  _vm.canDeleteUsers && user.status === "deleted"
+                    ? _c(
+                        "button",
+                        {
+                          staticClass: "button button-secondary",
+                          attrs: { disabled: _vm.saving === user.id },
+                          on: {
+                            click: function ($event) {
+                              return _vm.changeStatus(user, "active")
+                            },
+                          },
+                        },
+                        [_vm._v("復元")]
+                      )
+                    : _vm._e(),
+                ]),
               ]),
             ])
           }),
@@ -24214,6 +24316,7 @@ var staticRenderFns = [
         _c("th", [_vm._v("氏名")]),
         _c("th", [_vm._v("メールアドレス")]),
         _c("th", [_vm._v("権限")]),
+        _c("th", [_vm._v("状態")]),
         _c("th", [_vm._v("操作")]),
       ]),
     ])

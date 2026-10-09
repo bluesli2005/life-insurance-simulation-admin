@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
+use App\User;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 
@@ -37,6 +38,11 @@ class LoginController extends Controller
     protected function loggedOut(Request $request)
     {
         return redirect()->route('login');
+    }
+
+    protected function credentials(Request $request)
+    {
+        return $request->only($this->username(), 'password') + ['status' => User::STATUS_ACTIVE];
     }
 
     public function showLoginForm()

@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
         Route::middleware('can:users.manage')->group(function () {
             Route::get('users', 'Api\\UserRoleController@index');
             Route::patch('users/{user}/role', 'Api\\UserRoleController@update');
+            Route::patch('users/{user}/status', 'Api\\UserRoleController@updateStatus');
         });
     });
 

@@ -37,7 +37,7 @@
 
 - `routes/web.php` 注册登录、注册、登出、密码确认/重置/修改、管理页入口和同源业务 API；邮箱验证路由保持关闭。
 - `RegisterController` 将新账号以 `viewer` 角色写入 `users` 表；`ChangePasswordController` 验证旧密码后更新哈希与 remember token。
-- `AuthServiceProvider` 定义写入、删除和用户管理权限；后端 Gate 读取 `roles` 表的权限字段。`UserRoleController` 仅供有用户管理权限者列出用户和修改角色；禁止降级 `admin@example.com` 或最后一名最高管理者。
+- `AuthServiceProvider` 定义写入、删除和用户管理权限；后端 Gate 读取 `roles` 表的权限字段。`UserRoleController` 供有用户管理权限者列出用户和修改角色；标记删除与恢复还要求操作者属于 `super_admin`。禁止降级 `admin@example.com` 或最后一名最高管理者，也禁止标记删除自己或 `admin@example.com`。
 - `SimulationApplicationController` 负责 CRUD、关键词搜索、状态筛选和分页。
 - `SimulationApplicationRequest` 校验新增/更新字段；`SimulationApplicationIndexRequest` 校验列表查询参数。
 - `SimulationApplicationResource` 统一 JSON 响应格式。
@@ -46,7 +46,7 @@
 
 API 基础路径：`/admin/api/v1/simulation-applications`
 
-公开注册默认只读；`super_admin` 可读写、删除和管理角色，`editor` 可读写，`viewer` 只读。`roles` 表保存角色代码、日文名称及写入/删除/用户管理权限标记；`users.role_id` 外键引用它。权限管理 API：`GET /admin/api/v1/users`（返回用户和角色权限矩阵）、`PATCH /admin/api/v1/users/{id}/role`（分配已有角色）；注册请求中的角色字段不被接受。
+公开注册默认只读；`super_admin` 可读写、删除和管理角色，`editor` 可读写，`viewer` 只读。`roles` 表保存角色代码、日文名称及写入/删除/用户管理权限标记；`users.role_id` 外键引用它。权限管理 API：`GET /admin/api/v1/users`（返回用户和角色权限矩阵）、`PATCH /admin/api/v1/users/{id}/role`（分配已有角色）、`PATCH /admin/api/v1/users/{id}/status`（仅最高管理者将其他账号切换为 `active` / `deleted`）；注册请求中的角色字段不被接受。
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ API 基础路径：`/admin/api/v1/simulation-applications`
 
 ## 4. 前端边界
 
-- `resources/spa.html` 是唯一实际使用的静态页面入口；不使用 Blade 模板。`AdminSessionController` 提供当前用户名、数据库角色名称和 Gate 权限标记。
+- `resources/spa.html` 是唯一实际使用的静态页面入口；不使用 Blade 模板。`AdminSessionController` 提供当前用户 ID、用户名、数据库角色代码和名称，以及 Gate 权限标记。
 - `resources/js/app.js` 创建 Vue 实例并装配 Router、Vuex。
 - `resources/js/views/AuthApp.vue` 与 `resources/js/views/auth/` 管理登录、注册、密码确认和找回/重置密码；邮箱验证组件暂不开放。
 - `resources/js/views/PasswordChange.vue` 管理登录后的密码修改表单；`UserRoles.vue` 管理角色分配界面。
@@ -75,7 +75,7 @@ API 基础路径：`/admin/api/v1/simulation-applications`
 ## 5. 数据库与测试隔离
 
 - 开发数据库：`laravel`，用户名和密码均为 `root`。
-- 管理员邮箱和密码哈希以 `users` 表为准；角色定义和权限以 `roles` 表为准，`users.role_id` 记录用户所属角色。开发 Seeder 仅在 `users` 为空时创建最高管理者；迁移保留了现有 `admin@example.com` 的最高权限。
+- 管理员邮箱和密码哈希以 `users` 表为准；角色定义和权限以 `roles` 表为准，`users.role_id` 记录用户所属角色。`users.status` 默认 `active`；标记删除仅改为 `deleted`，保留用户行、密码哈希及关联数据。登录、密码重置和现有会话的受保护请求均拒绝已删除账号。开发 Seeder 仅在 `users` 为空时创建最高管理者；迁移保留了现有 `admin@example.com` 的最高权限。
 - 测试数据库：`laravel_testing`，PHPUnit 配置强制指定该库。
 - PHPUnit Feature Test 使用 `RefreshDatabase`，只清理测试数据库。
 - 前端 Jest 测试覆盖基础表单控件、字段错误和列表搜索提交行为。
