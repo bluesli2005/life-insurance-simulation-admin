@@ -2,6 +2,8 @@ import { createLocalVue, mount } from '@vue/test-utils';
 import Vuex from 'vuex';
 import client from '../../api/client';
 jest.mock('../../api/client', () => ({ get: jest.fn(), post: jest.fn(), patch: jest.fn() }));
+import BaseToast from '../../components/BaseToast.vue';
+import BaseSelect from '../../components/BaseSelect.vue';
 import UserRoles from '../UserRoles.vue';
 
 const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -28,6 +30,7 @@ describe('UserRoles', () => {
 
         const wrapper = mount(UserRoles, { localVue, store: makeStore() });
         await flushPromises();
+        expect(wrapper.findAllComponents(BaseSelect)).toHaveLength(2);
         expect(wrapper.findAll('select').at(0).attributes('disabled')).toBe('disabled');
 
         await wrapper.findAll('select').at(1).setValue('editor');
@@ -35,7 +38,11 @@ describe('UserRoles', () => {
         await flushPromises();
 
         expect(client.patch).toHaveBeenCalledWith('/users/2/role', { role: 'editor' });
-        expect(wrapper.text()).toContain('権限を変更しました。');
+        expect(wrapper.findComponent(BaseToast).props('message')).toBe('権限を変更しました。');
+        wrapper.findComponent(BaseToast).vm.$emit('dismiss');
+        await wrapper.vm.$nextTick();
+        expect(wrapper.find('.base-toast').exists()).toBe(false);
+        wrapper.destroy();
     });
 
     test('marks another user deleted and can restore them', async () => {
@@ -56,6 +63,7 @@ describe('UserRoles', () => {
         await flushPromises();
         expect(client.patch).toHaveBeenCalledWith('/users/2/status', { status: 'deleted' });
         expect(wrapper.text()).toContain('削除済み');
+        expect(wrapper.findAll('select').at(1).attributes('disabled')).toBe('disabled');
 
         await wrapper.findAll('button').wrappers.find(button => button.text() === '復元').trigger('click');
         await flushPromises();

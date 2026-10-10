@@ -5,7 +5,7 @@
         <p v-if="status" class="login-status" role="status">{{ status }}</p>
         <p v-if="error" class="login-error" role="alert">{{ error }}</p>
 
-        <form @submit.prevent="submit">
+        <form novalidate @submit.prevent="submit">
             <template v-for="field in fields">
                 <input v-if="field.type === 'hidden'" :key="field.name" v-model="form[field.name]" type="hidden" :name="field.name">
                 <label v-else-if="field.type === 'checkbox'" :key="field.name" class="remember-label">

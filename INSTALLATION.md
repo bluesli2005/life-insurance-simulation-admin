@@ -53,7 +53,11 @@ docker compose exec -T backend php artisan migrate --seed
 
 样例 120 条申请；新 local/testing 用户表为空时创建管理员 `admin@example.com` / `password`。Seeder 不覆盖已有账号。
 
-打开 `http://localhost:8080/login`，确认日文登录、列表和权限。后端 `http://localhost:8001/api/v1/auth/csrf` 返回 204；直接访问后端 `/login` 返回 JSON 404。
+前端登录地址：**[http://localhost:8080/login](http://localhost:8080/login)**。登录后进入 [http://localhost:8080/admin/applications](http://localhost:8080/admin/applications)，确认日文登录、列表和权限。
+
+浏览器地址必须使用 `localhost`，不要替换成 `127.0.0.1`。默认 CORS 没有允许 `http://127.0.0.1:8080`，该地址虽然能打开页面，但登录请求会返回 403。Docker 端口配置中的 `127.0.0.1` 表示主机回环绑定，不表示浏览器应使用该域名。
+
+8001 只用于后端 API：`http://localhost:8001/api/v1/auth/csrf` 返回 204；`http://localhost:8001/login` 返回 JSON 404，不能作为登录页面。
 
 ## 6. 创建测试库与测试
 
@@ -83,7 +87,7 @@ docker run --rm -v "$PWD/frontend:/frontend" -w /frontend node:14.21.3-buster np
 
 ## 7. 前端开发与直连
 
-`frontend/npm run dev` 先构建再启动 Node 标准库静态服务，默认代理到 `http://localhost:8001`。实际命令应在 frontend 目录运行：
+`npm run dev` 在 frontend 目录先构建再启动 Node 标准库静态服务，默认代理到 `http://localhost:8001`。实际命令应在 frontend 目录运行：
 
 ```bash
 npm run dev
@@ -109,6 +113,7 @@ docker compose up -d --no-deps frontend
 ## 8. 邮件和常见问题
 
 - 密码重置链接由后端 FRONTEND_URL 生成。实际发送需正确 SMTP、端口、账号与 TLS 配置；本地通知/日志验证不等于真实送达。
+- 登录时 403／「この操作を行う権限がありません。」：先核对浏览器地址。若使用 `127.0.0.1:8080`，请切换为 `http://localhost:8080/login`；默认配置会拒绝该来源地址。
 - 419：刷新页面获取新 CSRF Cookie，不自动重复新增、修改或删除。
 - 401：登录或重新登录；已标记删除账号也会被拒绝。
 - CORS：检查浏览器 origin、后端允许列表、凭证和统一 hostname。
@@ -117,3 +122,17 @@ docker compose up -d --no-deps frontend
 - 停止分离服务可使用 `docker compose stop`，保留数据库 volume。
 
 PHP Artisan serve 和此 Compose 用于开发/验收，不代表正式生产部署已加固。
+
+## 9. 当前目录与维护
+
+根目录只放 Compose、规范及 Markdown 文档。PHP 命令在 backend 容器执行，npm／Storybook 命令在 frontend 执行；不再使用根目录 app、resources、storage 等迁移前路径。
+
+```bash
+# 更新前端源码后，从根目录重建并替换静态服务
+docker compose build frontend
+docker compose up -d --no-deps frontend
+```
+
+运行依赖保留在 `backend/vendor/`、`frontend/node_modules/`。`backend/storage/`、`backend/bootstrap/cache/` 和静态服务所用的 `frontend/dist/` 需保留。可重新生成的测试覆盖率在各端 coverage/，Storybook 静态产物在 frontend/storybook-static/；未使用时可以清理，使用时按 npm scripts 重建。
+
+当前管理界面使用左侧菜单、日文页面校验和顶部共用 Toast。Toast 默认显示 3 秒后淡出；具体组件和服务边界见 ARCHITECTURE.md。

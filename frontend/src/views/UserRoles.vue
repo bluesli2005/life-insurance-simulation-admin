@@ -3,7 +3,7 @@
         <div class="page-heading"><h2>権限管理</h2></div>
         <p class="muted">新規登録ユーザーは閲覧者です。削除してもデータは残り、ログインできなくなります。</p>
         <p v-if="error" class="notice notice-error" role="alert">{{ error }}</p>
-        <p v-if="notice" class="notice" role="status">{{ notice }}</p>
+        <BaseToast :message="notice" @dismiss="notice = ''" />
         <div class="table-scroll">
             <table class="data-table">
                 <thead><tr><th>氏名</th><th>メールアドレス</th><th>権限</th><th>状態</th><th>操作</th></tr></thead>
@@ -12,9 +12,12 @@
                         <td>{{ user.name }}</td>
                         <td>{{ user.email }}</td>
                         <td>
-                            <select v-model="user.selectedRole" :disabled="user.email === 'admin@example.com' || user.status === 'deleted'">
-                                <option v-for="role in roles" :key="role.code" :value="role.code">{{ role.name }}</option>
-                            </select>
+                            <BaseSelect
+                                v-model="user.selectedRole"
+                                :name="`user-role-${user.id}`"
+                                :options="roleOptions"
+                                :disabled="user.email === 'admin@example.com' || user.status === 'deleted'"
+                            />
                         </td>
                         <td>{{ user.status === 'deleted' ? '削除済み' : '有効' }}</td>
                         <td>
@@ -45,9 +48,13 @@
 </template>
 
 <script>
+import BaseToast from '../components/BaseToast.vue';
+import BaseSelect from '../components/BaseSelect.vue';
 import client, { errorMessage } from '../api/client';
 export default {
+    components: { BaseSelect, BaseToast },
     computed: {
+        roleOptions() { return this.roles.map(role => ({ value: role.code, label: role.name })); },
         currentUserId() { return (this.$store.state.session || {}).user_id; },
         canDeleteUsers() { return (this.$store.state.session || {}).role_code === 'super_admin'; },
     },

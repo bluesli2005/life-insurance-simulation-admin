@@ -1,15 +1,40 @@
 # 项目文件与边界
 
-frontend 是独立 Vue 项目，backend 是独立 Laravel 项目，根目录组织部署和文档。
+更新日期：2026-10-10。下列文件清单来自当前工作树，包括未提交的新组件，排除 Git 忽略的依赖、环境文件、运行缓存和生成产物。
 
-- 前端入口：frontend/src/app.js、App.vue、router/index.js。
-- 共用请求：frontend/src/api/client.js、auth.js、simulationApplications.js。
-- 后端入口：backend/public/index.php、routes/api.php、session.api 中间件组。
-- 独立构建：frontend/webpack.mix.js、Dockerfile；后端 backend/Dockerfile 与 composer.lock。
-- Session/CORS：backend/app/Http/Middleware/ApiCors.php、VerifyCsrfToken.php、config/cors.php。
-- 生成物和真实环境配置不提交。
+## 目录结构
 
-## 文件清单
+```text
+仓库根目录/
+├── docker-compose.yml           独立 frontend/backend/mysql 服务
+├── *.md                         架构、安装、维护记录与目录说明
+├── frontend/
+│   ├── src/                     Vue 页面、基础组件、API、路由、状态、样式与 Jest
+│   ├── public/                  静态页面模板、favicon 与 robots
+│   ├── scripts/                 独立 Node 静态／API 代理服务
+│   ├── .storybook/              基础控件 Storybook 配置
+│   ├── dist/                    当前静态构建产物（忽略，按需构建）
+│   └── node_modules/            本地前端依赖（忽略）
+└── backend/
+    ├── app/                     Controller、Request、Resource、Model、Middleware、Gate
+    ├── bootstrap/、config/      Laravel 启动与配置，bootstrap/cache 为运行所需
+    ├── database/                migrations、factories、seeds
+    ├── public/                  API 的 PHP 入口，无 Vue 构建产物
+    ├── resources/               服务端语言与框架视图扩展目录
+    ├── routes/                  API 与 Laravel 路由配置
+    ├── scripts/                 Composer package discovery 辅助脚本
+    ├── storage/                 Laravel 文件、Session、缓存、日志等运行目录
+    ├── tests/                   PHPUnit Feature／Unit 测试
+    └── vendor/                  后端依赖（忽略）
+```
+
+前端入口为 src/app.js、App.vue 和 router/index.js；管理布局为 AdminApp.vue。权限下拉使用 BaseSelect，成功提示使用 BaseToast；Toast 示例和计时测试位于同一 components 模块。请求统一由 api/client.js 管理。
+
+后端入口为 public/index.php，业务接口为 routes/api.php，Session/CORS/CSRF 在 Kernel 与 Middleware 中配置。composer.lock、package-lock.json 均保留，使用锁文件安装。
+
+根目录迁移前的空目录已移除。未使用的 coverage 与 storybook-static 已清理；命令会在各端目录重新生成它们。当前 frontend/dist、依赖目录、后端运行目录及必要框架配置保留，不按“空目录”批量删除。
+
+## 当前维护文件清单
 
 ```text
 .editorconfig
@@ -167,10 +192,13 @@ frontend/src/components/BaseTable.stories.js
 frontend/src/components/BaseTable.vue
 frontend/src/components/BaseTextarea.stories.js
 frontend/src/components/BaseTextarea.vue
+frontend/src/components/BaseToast.stories.js
+frontend/src/components/BaseToast.vue
 frontend/src/components/ContentState.stories.js
 frontend/src/components/ContentState.vue
 frontend/src/components/SimulationApplicationForm.stories.js
 frontend/src/components/SimulationApplicationForm.vue
+frontend/src/components/__tests__/BaseToast.spec.js
 frontend/src/components/__tests__/form-components.spec.js
 frontend/src/router/__tests__/session.spec.js
 frontend/src/router/index.js

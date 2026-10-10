@@ -9,8 +9,8 @@
                         <p class="muted">{{ application.application_number }}</p>
                     </div>
                     <div class="heading-actions">
-                        <router-link v-if="canEdit" class="button button-secondary" :to="`${basePath}/edit`">編集</router-link>
-                        <BaseButton v-if="canDelete" variant="danger" :disabled="deleting" @click="deleteApplication">削除</BaseButton>
+                        <router-link v-if="canEdit" class="button button-primary" :to="`${basePath}/edit`">編集</router-link>
+                        <BaseButton v-if="canDelete" variant="button-danger" :disabled="deleting" @click="deleteApplication">削除</BaseButton>
                     </div>
                 </div>
 
@@ -97,3 +97,11 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.heading-actions .button { transition: background-color .15s ease, box-shadow .15s ease; }
+.heading-actions .button:hover:not(:disabled) { box-shadow: 0 2px 6px rgba(15, 23, 42, .2); }
+.heading-actions .button-primary:hover { background: #1d4ed8; }
+.heading-actions .button-danger:hover:not(:disabled) { background: #b91c1c; }
+.heading-actions .button:focus-visible { outline: 2px solid #253238; outline-offset: 2px; }
+</style>

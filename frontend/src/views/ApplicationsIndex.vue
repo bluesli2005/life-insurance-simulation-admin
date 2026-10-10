@@ -8,7 +8,7 @@
             <router-link v-if="canEdit" class="button button-primary" to="/admin/applications/create">申込登録</router-link>
         </div>
 
-        <form class="filter-panel" @submit.prevent="search">
+        <form class="filter-panel" novalidate @submit.prevent="search">
             <label class="field filter-keyword">
                 <span>キーワード</span>
                 <input v-model="searchText" type="search" maxlength="100" placeholder="申込番号、氏名、備考">
