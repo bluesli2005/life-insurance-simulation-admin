@@ -22,6 +22,9 @@ class SimulationApplicationRequest extends FormRequest
             'effective_date',
             $application ? $application->effective_date->format('Y-m-d') : 'today'
         );
+        $expiryDate = $this->exists('expiry_date')
+            ? $this->input('expiry_date')
+            : ($application && $application->expiry_date ? $application->expiry_date->format('Y-m-d') : null);
 
         return [
             'application_number' => [$required, 'string', 'max:50', Rule::unique('simulation_applications')->ignore($application)],
@@ -33,7 +36,7 @@ class SimulationApplicationRequest extends FormRequest
             'premium_amount' => [$required, 'numeric', 'gt:0', 'max:9999999999999.99'],
             'currency' => [$currencyRequired, 'string', 'size:3', 'regex:/^[A-Z]{3}$/'],
             'status' => [$required, Rule::in(SimulationApplication::STATUSES)],
-            'effective_date' => [$required, 'date'],
+            'effective_date' => array_filter([$required, 'date', $expiryDate ? 'before_or_equal:'.$expiryDate : null]),
             'expiry_date' => ['nullable', 'date', 'after_or_equal:'.$effectiveDate],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];

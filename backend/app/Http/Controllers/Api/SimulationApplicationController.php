@@ -7,6 +7,8 @@ use App\Http\Requests\SimulationApplicationIndexRequest;
 use App\Http\Requests\SimulationApplicationRequest;
 use App\Http\Resources\SimulationApplicationResource;
 use App\Models\SimulationApplication;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SimulationApplicationController extends Controller
 {
@@ -56,7 +58,12 @@ class SimulationApplicationController extends Controller
     {
         $attributes = $request->validated();
         $attributes['currency'] = $attributes['currency'] ?? 'JPY';
-        $application = SimulationApplication::create($attributes);
+        $application = DB::transaction(function () use ($request, $attributes) {
+            $application = SimulationApplication::create($attributes);
+            $this->recordChange($application, $request->user()->id, 'created', null, $application->getAttributes());
+
+            return $application;
+        });
 
         return response()->json([
             'data' => (new SimulationApplicationResource($application))->resolve(),
@@ -72,17 +79,58 @@ class SimulationApplicationController extends Controller
 
     public function update(SimulationApplicationRequest $request, SimulationApplication $simulation_application)
     {
-        $simulation_application->fill($request->validated())->save();
+        DB::transaction(function () use ($request, $simulation_application) {
+            $before = $simulation_application->getAttributes();
+            $simulation_application->fill($request->validated());
+            if ($simulation_application->isDirty()) {
+                $simulation_application->save();
+                $this->recordChange($simulation_application, $request->user()->id, 'updated', $before, $simulation_application->getAttributes());
+            }
+        });
 
         return response()->json([
             'data' => (new SimulationApplicationResource($simulation_application->fresh()))->resolve(),
         ]);
     }
 
-    public function destroy(SimulationApplication $simulation_application)
+    public function destroy(Request $request, SimulationApplication $simulation_application)
     {
-        $simulation_application->delete();
+        DB::transaction(function () use ($request, $simulation_application) {
+            $before = $simulation_application->getAttributes();
+            $simulation_application->delete();
+            $this->recordChange($simulation_application, $request->user()->id, 'deleted', $before, $simulation_application->getAttributes());
+        });
 
         return response()->json(['data' => null]);
+    }
+
+    public function history($id)
+    {
+        SimulationApplication::withTrashed()->findOrFail($id);
+        $events = DB::table('simulation_application_audits')->where('application_id', $id)
+            ->orderBy('id')->get()->map(function ($event) {
+                return [
+                    'id' => $event->id,
+                    'actor_user_id' => $event->actor_user_id,
+                    'action' => $event->action,
+                    'before' => $event->before_data ? json_decode($event->before_data, true) : null,
+                    'after' => $event->after_data ? json_decode($event->after_data, true) : null,
+                    'created_at' => $event->created_at,
+                ];
+            });
+
+        return response()->json(['data' => $events]);
+    }
+
+    private function recordChange(SimulationApplication $application, $actorId, $action, $before, $after)
+    {
+        DB::table('simulation_application_audits')->insert([
+            'application_id' => $application->id,
+            'actor_user_id' => $actorId,
+            'action' => $action,
+            'before_data' => $before === null ? null : json_encode($before, JSON_UNESCAPED_UNICODE),
+            'after_data' => $after === null ? null : json_encode($after, JSON_UNESCAPED_UNICODE),
+            'created_at' => now(),
+        ]);
     }
 }

@@ -64,7 +64,7 @@ class SimulationApplicationSeeder extends Seeder
                     'status' => $status,
                 ])->getAttributes();
 
-                SimulationApplication::firstOrCreate(
+                SimulationApplication::withTrashed()->firstOrCreate(
                     ['application_number' => sprintf('SIM-2026-%04d', $sequence)],
                     $attributes
                 );

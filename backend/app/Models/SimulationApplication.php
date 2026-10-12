@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SimulationApplication extends Model
 {
+    use SoftDeletes;
+
     const STATUSES = ['draft', 'submitted', 'approved', 'rejected', 'cancelled'];
 
     protected $fillable = [

@@ -53,6 +53,7 @@ Laravel API 路由使用 `session.api`：Cookie 加密、Cookie 响应、Session
 | POST | /auth/password/email、/auth/password/reset | 找回／重置 |
 | GET / POST | /simulation-applications | 搜索分页／创建 |
 | GET / PUT / PATCH / DELETE | /simulation-applications/{id} | 详情／更新／删除 |
+| GET | /simulation-applications/{id}/history | 申込操作记录；需删除权限，支持已软删除记录 |
 | GET | /users | 用户与角色矩阵 |
 | PATCH | /users/{id}/role、/users/{id}/status | 权限／账号状态更新 |
 
@@ -67,6 +68,8 @@ Compose project 为 `life-insurance-separated`；backend 仅挂载 `./backend`�
 开发库 `laravel`、测试库 `laravel_testing` 分离；开发账号 root/root。原业务数据库不自动导入；目录清理不操作数据库或 Docker volume。Session Cookie HttpOnly、SameSite=lax；跨站部署需单独配置和验证 HTTPS、Cookie domain 与 SameSite。
 
 `frontend/node_modules`、`backend/vendor` 为当前依赖；`frontend/dist` 为独立静态服务产物；`backend/bootstrap/cache` 和 `backend/storage` 为 Laravel 必要运行目录，均不能当作迁移遗留目录删除。coverage 和 storybook-static 是可重新生成的报告／构建产物。
+
+申込使用 `deleted_at` 软删除；普通查询和路由绑定自动排除已删除记录，唯一申込番号仍由数据库保留。`simulation_application_audits` 记录 API 创建／编辑／删除的操作者与完整前后快照，写入与业务操作共用事务；历史接口只允许具备删除权限的用户读取。旧数据没有追溯历史，Seeder 直接写入的数据也不产生 API 操作记录。部分更新根据请求字段与现存字段合成最终日期进行校验。
 
 ## 验证与限制
 

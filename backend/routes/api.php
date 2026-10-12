@@ -18,6 +18,8 @@ Route::prefix('v1')->group(function () {
         Route::post('auth/password/confirm', 'Auth\ConfirmPasswordController@confirm');
         Route::post('auth/password/change', 'Auth\ChangePasswordController@update');
         Route::apiResource('simulation-applications', 'Api\SimulationApplicationController')->only(['index', 'show']);
+        Route::get('simulation-applications/{id}/history', 'Api\SimulationApplicationController@history')
+            ->middleware('can:applications.delete');
         Route::middleware('can:applications.write')->group(function () {
             Route::apiResource('simulation-applications', 'Api\SimulationApplicationController')->only(['store', 'update']);
         });

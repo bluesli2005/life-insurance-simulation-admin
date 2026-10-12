@@ -58,4 +58,33 @@ describe('ApplicationsIndex', () => {
         });
         expect(wrapper.text()).not.toContain('申込登録');
     });
+
+    test('renders application rows through BaseTable with formatted cells', () => {
+        const localVue = createLocalVue();
+        localVue.use(Vuex);
+        const store = new Vuex.Store({
+            state: {
+                session: { can_write_applications: false },
+                applications: [{
+                    id: 7,
+                    application_number: 'SIM-007',
+                    applicant_name: '山田 太郎',
+                    insured_name: '山田 花子',
+                    coverage_amount: '1200',
+                    currency: 'JPY',
+                    status: 'approved',
+                    effective_date: '2026-10-10',
+                }],
+                pagination: {}, filters: { search: '', status: '' }, loading: false, error: '',
+            },
+            actions: { fetchApplications: jest.fn().mockResolvedValue() },
+        });
+        const wrapper = mount(ApplicationsIndex, {
+            localVue, store, stubs: { 'router-link': { template: '<a><slot /></a>' } },
+        });
+
+        expect(wrapper.findAll('tbody td').wrappers.map(cell => cell.text())).toEqual([
+            'SIM-007', '山田 太郎', '山田 花子', '1,200 JPY', '承認済み', '2026-10-10', '詳細',
+        ]);
+    });
 });

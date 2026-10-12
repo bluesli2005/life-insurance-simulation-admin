@@ -4,62 +4,67 @@
         <p class="muted">新規登録ユーザーは閲覧者です。削除してもデータは残り、ログインできなくなります。</p>
         <p v-if="error" class="notice notice-error" role="alert">{{ error }}</p>
         <BaseToast :message="notice" @dismiss="notice = ''" />
-        <div class="table-scroll">
-            <table class="data-table">
-                <thead><tr><th>氏名</th><th>メールアドレス</th><th>権限</th><th>状態</th><th>操作</th></tr></thead>
-                <tbody>
-                    <tr v-for="user in users" :key="user.id">
-                        <td>{{ user.name }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                            <BaseSelect
-                                v-model="user.selectedRole"
-                                :name="`user-role-${user.id}`"
-                                :options="roleOptions"
-                                :disabled="user.email === 'admin@example.com' || user.status === 'deleted'"
-                            />
-                        </td>
-                        <td>{{ user.status === 'deleted' ? '削除済み' : '有効' }}</td>
-                        <td>
-                            <div class="heading-actions">
-                                <button class="button button-primary" :disabled="saving === user.id || user.status === 'deleted' || user.selectedRole === user.role" @click="save(user)">保存</button>
-                                <button v-if="canDeleteUsers && user.status === 'active' && user.id !== currentUserId && user.email !== 'admin@example.com'" class="button button-danger" :disabled="saving === user.id" @click="changeStatus(user, 'deleted')">削除</button>
-                                <button v-if="canDeleteUsers && user.status === 'deleted'" class="button button-secondary" :disabled="saving === user.id" @click="changeStatus(user, 'active')">復元</button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="table-scroll">
-            <table class="data-table">
-                <thead><tr><th>権限</th><th>申込の追加・編集</th><th>申込の削除</th><th>ユーザー権限の管理</th></tr></thead>
-                <tbody>
-                    <tr v-for="role in roles" :key="role.code">
-                        <td>{{ role.name }}</td>
-                        <td>{{ role.can_write_applications ? '可' : '不可' }}</td>
-                        <td>{{ role.can_delete_applications ? '可' : '不可' }}</td>
-                        <td>{{ role.can_manage_users ? '可' : '不可' }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <BaseTable :columns="userColumns" :rows="users" row-key="id">
+            <template slot="cell" slot-scope="{ row, column, value }">
+                <BaseSelect
+                    v-if="column.key === 'selectedRole'"
+                    v-model="row.selectedRole"
+                    :name="`user-role-${row.id}`"
+                    :options="roleOptions"
+                    :disabled="row.email === 'admin@example.com' || row.status === 'deleted'"
+                />
+                <span v-else-if="column.key === 'status'">{{ value === 'deleted' ? '削除済み' : '有効' }}</span>
+                <span v-else>{{ value }}</span>
+            </template>
+            <template slot="actions" slot-scope="{ row }">
+                <div class="heading-actions">
+                    <button class="button button-primary" :disabled="saving === row.id || row.status === 'deleted' || row.selectedRole === row.role" @click="save(row)">保存</button>
+                    <button v-if="canDeleteUsers && row.status === 'active' && row.id !== currentUserId && row.email !== 'admin@example.com'" class="button button-danger" :disabled="saving === row.id" @click="changeStatus(row, 'deleted')">削除</button>
+                    <button v-if="canDeleteUsers && row.status === 'deleted'" class="button button-secondary" :disabled="saving === row.id" @click="changeStatus(row, 'active')">復元</button>
+                </div>
+            </template>
+        </BaseTable>
+        <BaseTable :columns="roleColumns" :rows="roles" row-key="code">
+            <template slot="cell" slot-scope="{ column, value }">
+                <span v-if="column.key === 'can_write_applications' || column.key === 'can_delete_applications' || column.key === 'can_manage_users'">{{ value ? '可' : '不可' }}</span>
+                <span v-else>{{ value }}</span>
+            </template>
+        </BaseTable>
     </section>
 </template>
 
 <script>
 import BaseToast from '../components/BaseToast.vue';
 import BaseSelect from '../components/BaseSelect.vue';
+import BaseTable from '../components/BaseTable.vue';
 import client, { errorMessage } from '../api/client';
 export default {
-    components: { BaseSelect, BaseToast },
+    components: { BaseSelect, BaseTable, BaseToast },
     computed: {
         roleOptions() { return this.roles.map(role => ({ value: role.code, label: role.name })); },
         currentUserId() { return (this.$store.state.session || {}).user_id; },
         canDeleteUsers() { return (this.$store.state.session || {}).role_code === 'super_admin'; },
     },
     data() {
-        return { users: [], roles: [], saving: null, error: '', notice: '' };
+        return {
+            users: [],
+            roles: [],
+            saving: null,
+            error: '',
+            notice: '',
+            userColumns: [
+                { key: 'name', label: '氏名' },
+                { key: 'email', label: 'メールアドレス' },
+                { key: 'selectedRole', label: '権限' },
+                { key: 'status', label: '状態' },
+            ],
+            roleColumns: [
+                { key: 'name', label: '権限' },
+                { key: 'can_write_applications', label: '申込の追加・編集' },
+                { key: 'can_delete_applications', label: '申込の削除' },
+                { key: 'can_manage_users', label: 'ユーザー権限の管理' },
+            ],
+        };
     },
     created() {
         this.load();

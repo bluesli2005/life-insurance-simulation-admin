@@ -48,7 +48,64 @@ class SimulationApplicationsApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data', null);
 
-        $this->assertDatabaseMissing('simulation_applications', ['id' => $created['id']]);
+        $this->assertSoftDeleted('simulation_applications', ['id' => $created['id']]);
+        $this->getJson('/api/v1/simulation-applications/'.$created['id'])->assertNotFound();
+        $this->getJson('/api/v1/simulation-applications')->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/simulation-applications/'.$created['id'].'/history')
+            ->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.action', 'created')
+            ->assertJsonPath('data.1.action', 'updated')
+            ->assertJsonPath('data.1.before.beneficiary_name', null)
+            ->assertJsonPath('data.1.after.beneficiary_name', '受取 花子')
+            ->assertJsonPath('data.2.action', 'deleted')
+            ->assertJsonPath('data.2.actor_user_id', auth()->id());
+    }
+
+    public function test_audit_history_is_restricted_to_users_with_delete_permission()
+    {
+        $application = factory(SimulationApplication::class)->create();
+        $viewer = User::create([
+            'name' => '閲覧者',
+            'email' => 'viewer@example.com',
+            'password' => bcrypt('password'),
+            'role_id' => Role::where('code', User::ROLE_VIEWER)->value('id'),
+        ]);
+
+        $this->actingAs($viewer)->getJson('/api/v1/simulation-applications/'.$application->id.'/history')
+            ->assertForbidden();
+    }
+
+    public function test_partial_update_validates_effective_date_against_existing_expiry_date()
+    {
+        $application = factory(SimulationApplication::class)->create([
+            'effective_date' => '2030-01-01',
+            'expiry_date' => '2035-01-01',
+        ]);
+
+        $this->patchJson('/api/v1/simulation-applications/'.$application->id, [
+            'effective_date' => '2036-01-01',
+        ])->assertStatus(422)->assertJsonValidationErrors('effective_date');
+        $this->assertSame('2030-01-01', $application->fresh()->effective_date->format('Y-m-d'));
+
+        $this->patchJson('/api/v1/simulation-applications/'.$application->id, [
+            'effective_date' => '2036-01-01',
+            'expiry_date' => null,
+        ])->assertOk();
+        $this->assertNull($application->fresh()->expiry_date);
+    }
+
+    public function test_partial_update_validates_expiry_date_against_existing_effective_date()
+    {
+        $application = factory(SimulationApplication::class)->create([
+            'effective_date' => '2030-01-01',
+            'expiry_date' => null,
+        ]);
+
+        $this->patchJson('/api/v1/simulation-applications/'.$application->id, [
+            'expiry_date' => '2029-12-31',
+        ])->assertStatus(422)->assertJsonValidationErrors('expiry_date');
+        $this->assertNull($application->fresh()->expiry_date);
     }
 
     public function test_invalid_application_data_returns_japanese_validation_errors()
@@ -134,6 +191,11 @@ class SimulationApplicationsApiTest extends TestCase
         $this->assertSame(1234567.89, (float) $application->fresh()->coverage_amount);
         $this->assertSame(24, SimulationApplication::where('status', 'draft')->count());
         $this->assertSame(24, SimulationApplication::where('status', 'cancelled')->count());
+
+        $application->delete();
+        $this->seed('SimulationApplicationSeeder');
+        $this->assertSame(119, SimulationApplication::count());
+        $this->assertSame(120, SimulationApplication::withTrashed()->count());
     }
 
     private function validPayload()

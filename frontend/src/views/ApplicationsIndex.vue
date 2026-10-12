@@ -21,7 +21,8 @@
         </form>
 
         <ContentState :loading="loading" :error="error" :empty="!applications.length" empty-message="申込データがありません。" retry @retry="loadCurrentPage">
-            <BaseTable :columns="columns" :rows="tableRows">
+            <BaseTable :columns="columns" :rows="applications" row-key="id">
+                <template v-slot:cell="{ row, column, value }">{{ formatCell(row, column, value) }}</template>
                 <template v-slot:actions="{ row }">
                     <router-link class="table-link" :to="`/admin/applications/${row.id}`">詳細</router-link>
                 </template>
@@ -72,8 +73,8 @@ export default {
                 { key: 'application_number', label: '申込番号' },
                 { key: 'applicant_name', label: '申込者氏名' },
                 { key: 'insured_name', label: '被保険者氏名' },
-                { key: 'coverage', label: '保険金額' },
-                { key: 'status_label', label: 'ステータス' },
+                { key: 'coverage_amount', label: '保険金額' },
+                { key: 'status', label: 'ステータス' },
                 { key: 'effective_date', label: '適用開始日' },
             ],
         };
@@ -86,17 +87,16 @@ export default {
         total() { return this.pagination.total || 0; },
         from() { return this.pagination.from || 0; },
         to() { return this.pagination.to || 0; },
-        tableRows() {
-            return this.applications.map(application => Object.assign({}, application, {
-                coverage: `${Number(application.coverage_amount).toLocaleString('ja-JP')} ${application.currency}`,
-                status_label: statusLabels[application.status] || application.status,
-            }));
-        },
     }),
     created() {
         this.loadCurrentPage();
     },
     methods: {
+        formatCell(row, column, value) {
+            if (column.key === 'coverage_amount') return `${Number(value).toLocaleString('ja-JP')} ${row.currency}`;
+            if (column.key === 'status') return statusLabels[value] || value;
+            return value === null || value === undefined || value === '' ? '—' : value;
+        },
         loadCurrentPage() {
             return this.$store.dispatch('fetchApplications').catch(() => {});
         },

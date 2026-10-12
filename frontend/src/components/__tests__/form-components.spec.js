@@ -73,4 +73,17 @@ describe('form components', () => {
         expect(wrapper.find('.field-error').text()).toBe('申込番号を入力してください。');
         expect(wrapper.emitted('submit')).toBeUndefined();
     });
+
+    test('application form uses the local calendar date across a UTC day boundary', () => {
+        const localDate = {
+            getFullYear: () => 2026,
+            getMonth: () => 9,
+            getDate: () => 10,
+            toISOString: () => '2026-10-09T15:30:00.000Z',
+        };
+
+        expect(SimulationApplicationForm.methods.todayValue(localDate)).toBe('2026-10-10');
+        expect(SimulationApplicationForm.computed.today.call({ todayValue: () => SimulationApplicationForm.methods.todayValue(localDate) }))
+            .toBe('2026-10-10');
+    });
 });
