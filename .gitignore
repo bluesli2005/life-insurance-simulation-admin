@@ -2,6 +2,8 @@
 **/vendor/
 **/coverage/
 **/test-results/
+**/cypress/screenshots/
+**/cypress/videos/
 **/storybook-static/
 /frontend/dist/
 **/.env

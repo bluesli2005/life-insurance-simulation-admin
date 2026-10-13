@@ -16,6 +16,8 @@
         "test": "jest --runInBand",
         "test:e2e": "playwright test --config=playwright.config.js",
         "test:e2e:ui": "playwright test --config=playwright.config.js --ui",
+        "test:cypress": "cypress run --browser chrome --headless",
+        "test:cypress:ui": "cypress open --e2e",
         "test:coverage": "jest --runInBand --coverage --coverageDirectory=coverage",
         "serve": "node scripts/serve.js"
     },
@@ -28,6 +30,7 @@
         "babel-core": "7.0.0-bridge.0",
         "babel-jest": "26.6.3",
         "cross-env": "7.0.3",
+        "cypress": "12.17.4",
         "jest": "26.6.3",
         "laravel-mix": "5.0.9",
         "lodash": "4.17.21",

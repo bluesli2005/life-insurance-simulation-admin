@@ -62,6 +62,8 @@ npm run build-storybook
 
 Playwright E2E 测试需先启动 Compose 服务，并在运行测试的电脑安装 Google Chrome。在 `frontend/` 执行 `npm run test:e2e`；打开交互界面使用 `npm run test:e2e:ui`（即 `playwright test --config=playwright.config.js --ui`）。可用 `E2E_BASE_URL` 指定其他前端地址。测试只检查登录页空表单的服务端校验，不创建数据。Playwright 固定为支持 Node 14 的 1.34.3；当前本机使用 Chrome 运行。
 
+Cypress 的同一场景可在 `frontend/` 执行 `npm run test:cypress`；交互界面使用 `npm run test:cypress:ui`（即 `cypress open --e2e`），在界面中选择 Chrome 和测试文件。首次在本机安装依赖后，若缺少 Cypress 浏览器程序，运行 `npx cypress install`。Cypress 固定为支持 Node 14 的 12.17.4；测试使用本机 Chrome，需先启动 Compose 服务。`E2E_BASE_URL` 同样适用。
+
 Storybook 入口为 http://localhost:6007，不需要后端。静态产物在 `frontend/storybook-static/`；生产页面产物在 `frontend/dist/`，不复制到 backend，也不提交到 Git。构建产物可按需重新生成，不能删除正在使用的静态服务目录。
 
 后端测试在仓库根目录执行，使用独立 `laravel_testing` 数据库：
