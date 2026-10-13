@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+/** ログイン中の管理者情報と操作権限を返す。 */
 class AdminSessionController extends Controller
 {
     public function show(Request $request)

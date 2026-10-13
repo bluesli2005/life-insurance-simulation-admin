@@ -16,6 +16,7 @@ export default {
         message: {
             immediate: true,
             handler(message) {
+                // 新しい通知が来たら前のタイマーを破棄し、表示時間を数え直す。
                 clearTimeout(this.dismissTimer);
                 if (message) {
                     this.dismissTimer = setTimeout(() => this.$emit('dismiss'), this.duration);

@@ -7,6 +7,7 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\VerifiesEmails;
 use Illuminate\Http\Request;
 
+/** メール確認用の認証処理と未対応画面の応答を扱う。 */
 class VerificationController extends Controller
 {
     /*

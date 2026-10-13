@@ -3,6 +3,7 @@
 use App\Models\SimulationApplication;
 use Illuminate\Database\Seeder;
 
+/** 開発・テスト用のサンプル申込を用意する。 */
 class SimulationApplicationSeeder extends Seeder
 {
     public function run()
@@ -11,7 +12,7 @@ class SimulationApplicationSeeder extends Seeder
             return;
         }
 
-        // 将现有标准示例申请的姓名和备注统一为日文。
+        // 既存のサンプル申込の氏名と備考を日本語に統一する。
         $japaneseNames = [
             '佐藤 花子', '鈴木 太郎', '高橋 美咲', '田中 健太', '伊藤 さくら',
             '渡辺 翔太', '山本 葵', '中村 大輔', '小林 結衣', '加藤 直樹',
@@ -64,6 +65,7 @@ class SimulationApplicationSeeder extends Seeder
                     'status' => $status,
                 ])->getAttributes();
 
+                // 削除済みの申込番号も既存扱いとし、再実行時の重複作成を防ぐ。
                 SimulationApplication::withTrashed()->firstOrCreate(
                     ['application_number' => sprintf('SIM-2026-%04d', $sequence)],
                     $attributes

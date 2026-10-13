@@ -49,6 +49,7 @@ export default {
         clearOnSuccess: { type: Boolean, default: false },
     },
     data() {
+        // 画面ごとのフィールド定義から送信データを初期化する。
         const form = {};
         this.fields.forEach(field => { form[field.name] = field.value || (field.type === 'checkbox' ? false : ''); });
         return { form, errors: {}, error: '', status: '', processing: false };
@@ -70,6 +71,7 @@ export default {
                 this.errors = error.response && error.response.data && error.response.data.errors
                     ? error.response.data.errors
                     : {};
+                // 項目別エラーがある場合は、同じ内容の共通エラーを重ねて表示しない。
                 this.error = Object.keys(this.errors).length
                     ? ''
                     : errorMessage(error, '処理に失敗しました。入力内容をご確認ください。');

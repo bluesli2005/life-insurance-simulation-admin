@@ -6,6 +6,7 @@ use App\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
+/** 申込とユーザー管理の操作権限を定義する。 */
 class AuthServiceProvider extends ServiceProvider
 {
     /**

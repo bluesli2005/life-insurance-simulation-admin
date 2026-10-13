@@ -5,6 +5,7 @@ use App\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
+/** 開発・テスト用の初期管理者を作成する。 */
 class DevelopmentAdminSeeder extends Seeder
 {
     public function run()

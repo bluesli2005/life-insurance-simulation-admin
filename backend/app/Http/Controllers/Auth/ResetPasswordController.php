@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\PasswordBroker as PasswordBrokerContract;
 
+/** 再設定トークンを使ったパスワード更新を扱う。 */
 class ResetPasswordController extends Controller
 {
     /*

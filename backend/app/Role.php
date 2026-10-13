@@ -4,6 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
+/** 権限ロールと操作許可フラグを定義する。 */
 class Role extends Model
 {
     public $timestamps = false;

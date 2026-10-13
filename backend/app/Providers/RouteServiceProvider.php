@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Route;
 
+/** Web とセッション付き API のルートを登録する。 */
 class RouteServiceProvider extends ServiceProvider
 {
     /**
@@ -63,13 +64,7 @@ class RouteServiceProvider extends ServiceProvider
              ->group(base_path('routes/web.php'));
     }
 
-    /**
-     * Define the "api" routes for the application.
-     *
-     * These routes are typically stateless.
-     *
-     * @return void
-     */
+    /** API でも Cookie 認証に必要なセッションと CSRF 保護を適用する。 */
     protected function mapApiRoutes()
     {
         Route::prefix('api')

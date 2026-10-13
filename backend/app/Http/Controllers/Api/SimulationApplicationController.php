@@ -10,6 +10,7 @@ use App\Models\SimulationApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+/** 保険申込の検索・登録・更新・削除と監査履歴を扱う。 */
 class SimulationApplicationController extends Controller
 {
     public function index(SimulationApplicationIndexRequest $request)
@@ -19,6 +20,7 @@ class SimulationApplicationController extends Controller
 
         if (! empty($filters['search'])) {
             $term = $filters['search'];
+            // 複数項目の OR 条件をまとめ、ステータス条件とは AND で組み合わせる。
             $query->where(function ($query) use ($term) {
                 foreach (['application_number', 'applicant_name', 'insured_name', 'beneficiary_name', 'notes'] as $column) {
                     $query->orWhere($column, 'like', '%'.$term.'%');
@@ -30,6 +32,7 @@ class SimulationApplicationController extends Controller
             $query->where('status', $filters['status']);
         }
 
+        // 作成日時が同じ場合もページ間で並び順が変わらないよう、ID を併用する。
         $applications = $query->orderByDesc('created_at')
             ->orderByDesc('id')
             ->paginate($filters['per_page'] ?? 10);
@@ -58,6 +61,7 @@ class SimulationApplicationController extends Controller
     {
         $attributes = $request->validated();
         $attributes['currency'] = $attributes['currency'] ?? 'JPY';
+        // 申込と監査履歴を同じトランザクションで保存する。
         $application = DB::transaction(function () use ($request, $attributes) {
             $application = SimulationApplication::create($attributes);
             $this->recordChange($application, $request->user()->id, 'created', null, $application->getAttributes());
@@ -82,6 +86,7 @@ class SimulationApplicationController extends Controller
         DB::transaction(function () use ($request, $simulation_application) {
             $before = $simulation_application->getAttributes();
             $simulation_application->fill($request->validated());
+            // 値が変わらない更新では監査履歴を増やさない。
             if ($simulation_application->isDirty()) {
                 $simulation_application->save();
                 $this->recordChange($simulation_application, $request->user()->id, 'updated', $before, $simulation_application->getAttributes());
@@ -97,6 +102,7 @@ class SimulationApplicationController extends Controller
     {
         DB::transaction(function () use ($request, $simulation_application) {
             $before = $simulation_application->getAttributes();
+            // 論理削除後も変更前後の状態を監査履歴に残す。
             $simulation_application->delete();
             $this->recordChange($simulation_application, $request->user()->id, 'deleted', $before, $simulation_application->getAttributes());
         });
@@ -106,6 +112,7 @@ class SimulationApplicationController extends Controller
 
     public function history($id)
     {
+        // 削除済みの申込も監査履歴を参照できる。
         SimulationApplication::withTrashed()->findOrFail($id);
         $events = DB::table('simulation_application_audits')->where('application_id', $id)
             ->orderBy('id')->get()->map(function ($event) {

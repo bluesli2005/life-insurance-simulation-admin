@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Foundation\Http\Middleware\TrimStrings as Middleware;
 
+/** 入力文字列を整え、パスワード項目は対象から除外する。 */
 class TrimStrings extends Middleware
 {
     /**

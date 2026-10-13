@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Cookie\Middleware\EncryptCookies as Middleware;
 
+/** Cookie の暗号化対象を設定する。 */
 class EncryptCookies extends Middleware
 {
     /**

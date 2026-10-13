@@ -5,6 +5,7 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
+/** Artisan コマンドの登録と実行スケジュールを管理する。 */
 class Kernel extends ConsoleKernel
 {
     /**

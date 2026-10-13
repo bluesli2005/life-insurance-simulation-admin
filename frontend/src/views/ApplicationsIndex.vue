@@ -101,6 +101,7 @@ export default {
             return this.$store.dispatch('fetchApplications').catch(() => {});
         },
         search() {
+            // 検索条件を確定したら、現在のページではなく先頭から表示する。
             this.$store.dispatch('fetchApplications', {
                 search: this.searchText.trim(),
                 status: this.statusFilter,

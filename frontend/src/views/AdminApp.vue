@@ -42,6 +42,7 @@ export default {
             try {
                 await auth.logout();
                 this.$store.commit('setSession', null);
+                // 次のログイン要求に備えて CSRF Cookie を取得し直す。
                 await auth.csrf();
                 this.$router.push('/login');
             } catch (error) {

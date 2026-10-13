@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 
+/** アプリケーションの例外を記録し、HTTP 応答に変換する。 */
 class Handler extends ExceptionHandler
 {
     /**

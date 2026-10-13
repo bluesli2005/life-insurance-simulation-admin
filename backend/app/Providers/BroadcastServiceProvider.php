@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\ServiceProvider;
 
+/** イベント配信用のルートとチャンネルを登録する。 */
 class BroadcastServiceProvider extends ServiceProvider
 {
     /**

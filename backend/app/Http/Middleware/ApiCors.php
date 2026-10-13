@@ -6,11 +6,12 @@ use Closure;
 use Exception;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
+/** API の接続元を検証し、CORS ヘッダーを付ける。 */
 class ApiCors
 {
     public function handle($request, Closure $next)
     {
-        // This service exposes JSON only, including unknown routes and errors.
+        // 存在しないルートやエラーも JSON で返す。
         $request->headers->set('Accept', 'application/json');
         $origin = $request->header('Origin');
         $allowed = config('cors.allowed_origins');
@@ -19,6 +20,7 @@ class ApiCors
         }
 
         if ($request->isMethod('OPTIONS')) {
+            // プリフライトでは要求メソッドとヘッダーも許可リストに照合する。
             $method = $request->header('Access-Control-Request-Method');
             $headers = array_filter(array_map('trim', explode(',', strtolower($request->header('Access-Control-Request-Headers', '')))));
             $valid = $origin && in_array($method, config('cors.allowed_methods'), true)
@@ -28,6 +30,7 @@ class ApiCors
             try {
                 $response = $next($request);
             } catch (Exception $exception) {
+                // 例外応答にも後続の CORS ヘッダーを付与する。
                 $handler = app(ExceptionHandler::class);
                 $handler->report($exception);
                 $response = $handler->render($request, $exception);

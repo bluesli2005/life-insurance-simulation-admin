@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Seeder;
 
+/** 開発・テスト環境向けの初期データ投入をまとめる。 */
 class DatabaseSeeder extends Seeder
 {
     /**

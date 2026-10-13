@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/** 申込データと論理削除の設定を定義する。 */
 class SimulationApplication extends Model
 {
     use SoftDeletes;

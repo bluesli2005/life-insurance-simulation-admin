@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode as Middleware;
 
+/** メンテナンス中のアクセス可否を制御する。 */
 class CheckForMaintenanceMode extends Middleware
 {
     /**

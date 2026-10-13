@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/** ユーザーの認証情報・利用状態・ロールを保持する。 */
 class User extends Authenticatable
 {
     use Notifiable;

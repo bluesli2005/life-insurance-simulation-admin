@@ -50,6 +50,7 @@ export default {
                 this.$router.push(`/admin/applications/${response.data.data.id}`);
             } catch (error) {
                 this.errors = error.response && error.response.data.errors ? error.response.data.errors : {};
+                // 確認画面から入力画面へ戻し、サーバーの項目別エラーを表示する。
                 this.error = this.errors.application_number
                     ? ''
                     : '申込を登録できませんでした。入力内容をご確認ください。';

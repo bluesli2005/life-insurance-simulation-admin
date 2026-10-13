@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
+/** 新規ユーザーを閲覧者として登録する。 */
 class RegisterController extends Controller
 {
     /*
@@ -27,6 +28,7 @@ class RegisterController extends Controller
 
     protected function registered(\Illuminate\Http\Request $request, $user)
     {
+        // 登録後にセッション ID を更新し、JSON API として結果を返す。
         $request->session()->regenerate();
 
         return response()->json(['message' => '登録しました。'], 201);
@@ -72,6 +74,7 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        // 新規登録者には最小権限の閲覧者ロールを割り当てる。
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],

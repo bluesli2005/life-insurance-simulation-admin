@@ -73,6 +73,7 @@ export default {
         async load() {
             try {
                 const response = await client.get('/users');
+                // 選択中の権限と保存済みの権限を分け、未保存の変更を判定する。
                 this.users = response.data.data.map(user => Object.assign({ selectedRole: user.role }, user));
                 this.roles = response.data.roles;
             } catch (error) {

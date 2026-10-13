@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Fideloper\Proxy\TrustProxies as Middleware;
 use Illuminate\Http\Request;
 
+/** プロキシ経由のリクエストヘッダーを解釈する。 */
 class TrustProxies extends Middleware
 {
     /**

@@ -1,3 +1,3 @@
 <?php
 
-// All pages are served by the independent frontend. API routes live in api.php.
+// 画面は独立したフロントエンドが配信し、API ルートは api.php で定義する。

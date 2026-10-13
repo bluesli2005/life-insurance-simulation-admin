@@ -6,6 +6,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\ServiceProvider;
 
+/** パスワード再設定メールのリンクと本文を設定する。 */
 class AppServiceProvider extends ServiceProvider
 {
     public function register()

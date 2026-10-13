@@ -6,6 +6,7 @@ use App\Models\SimulationApplication;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/** 申込の登録・更新データを検証する。 */
 class SimulationApplicationRequest extends FormRequest
 {
     public function authorize()
@@ -16,12 +17,15 @@ class SimulationApplicationRequest extends FormRequest
     public function rules()
     {
         $application = $this->route('simulation_application');
+        // PATCH は送信項目だけを検証し、作成時は必須項目を要求する。
         $required = $this->isMethod('PATCH') ? 'sometimes' : 'required';
         $currencyRequired = $this->isMethod('POST') ? 'sometimes' : $required;
+        // PATCH で省略された日付は既存値を使い、更新後の日付範囲を検証する。
         $effectiveDate = $this->input(
             'effective_date',
             $application ? $application->effective_date->format('Y-m-d') : 'today'
         );
+        // 明示的な null は期限の解除として扱い、省略時だけ既存値を使う。
         $expiryDate = $this->exists('expiry_date')
             ? $this->input('expiry_date')
             : ($application && $application->expiry_date ? $application->expiry_date->format('Y-m-d') : null);

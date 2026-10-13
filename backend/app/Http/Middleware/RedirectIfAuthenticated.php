@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 
+/** ログイン済みユーザーのゲスト専用 API 利用を拒否する。 */
 class RedirectIfAuthenticated
 {
     /**

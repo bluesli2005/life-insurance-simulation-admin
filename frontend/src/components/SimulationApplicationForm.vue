@@ -95,6 +95,7 @@ export default {
         initialValue: {
             immediate: true,
             handler(value) {
+                // 編集データが後から届いても、未指定項目には新規登録時の初期値を使う。
                 this.form = Object.assign(this.emptyForm(), value || {});
             },
         },
@@ -117,6 +118,7 @@ export default {
             };
         },
         todayValue(date = new Date()) {
+            // UTC 変換による日付ずれを避け、ブラウザーの現地日付を使う。
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
@@ -126,6 +128,7 @@ export default {
             return this.requiredErrors[field] || (this.errors[field] ? this.errors[field][0] : '');
         },
         submit() {
+            // ブラウザー標準の検証に依存せず、必須項目のエラーを画面内に表示する。
             const requiredFields = {
                 application_number: '申込番号',
                 applicant_name: '申込者氏名',

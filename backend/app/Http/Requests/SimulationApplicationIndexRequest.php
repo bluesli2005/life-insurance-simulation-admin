@@ -6,6 +6,7 @@ use App\Models\SimulationApplication;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/** 申込一覧の検索・ページング条件を検証する。 */
 class SimulationApplicationIndexRequest extends FormRequest
 {
     public function authorize()

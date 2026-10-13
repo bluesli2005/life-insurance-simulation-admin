@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\PasswordBroker as PasswordBrokerContract;
 
+/** パスワード再設定メールの送信を扱う。 */
 class ForgotPasswordController extends Controller
 {
     /*

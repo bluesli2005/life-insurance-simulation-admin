@@ -4,6 +4,7 @@ namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
+/** HTTP リクエストに適用するミドルウェアを登録する。 */
 class Kernel extends HttpKernel
 {
     /**

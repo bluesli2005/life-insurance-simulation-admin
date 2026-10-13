@@ -13,6 +13,7 @@ Route::prefix('v1')->group(function () {
     });
     Route::post('auth/logout', 'Auth\LoginController@logout');
 
+    // 認証に加え、書き込み・削除・ユーザー管理には個別の権限を確認する。
     Route::middleware('auth')->group(function () {
         Route::get('auth/session', 'Api\AdminSessionController@show');
         Route::post('auth/password/confirm', 'Auth\ConfirmPasswordController@confirm');
