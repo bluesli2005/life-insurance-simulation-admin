@@ -63,7 +63,7 @@ Password Broker 通过后端 `FRONTEND_URL` 生成 `/password/reset/{token}?emai
 
 ## 运行与数据
 
-Compose project 为 `life-insurance-separated`；backend 仅挂载 `./backend`，frontend 镜像仅以 `./frontend` 构建，最终使用 nginx 静态镜像。8001、8080 绑定回环地址；MySQL 无主机端口，使用独立 volume。
+Compose project 为 `life-insurance-separated`；backend 仅挂载 `./backend`，frontend 镜像仅以 `./frontend` 构建，最终使用 nginx 静态镜像。8001、8080 绑定本机回环地址；MySQL 映射主机 3306，未限定绑定地址。容器内仍使用 mysql:3306，数据库使用独立 volume。
 
 开发库 `laravel`、测试库 `laravel_testing` 分离；开发账号 root/root。原业务数据库不自动导入；目录清理不操作数据库或 Docker volume。Session Cookie HttpOnly、SameSite=lax；跨站部署需单独配置和验证 HTTPS、Cookie domain 与 SameSite。
 

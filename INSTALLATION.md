@@ -11,7 +11,7 @@ docker version
 docker compose version
 ```
 
-确保本地 8080、8001 未被占用。MySQL 默认没有主机端口映射。
+确保本地 8080、8001、3306 未被占用。MySQL 的主机端口为 3306；当前 Compose 配置未限定绑定地址。
 
 ## 2. 创建后端环境文件
 
@@ -50,6 +50,8 @@ docker compose exec -T backend php artisan migrate --seed
 ```
 
 新 Compose project 使用独立 `life-insurance-separated_mysql57_data` volume，不复用旧项目 volume。迁移命令只适用于该新环境；旧业务数据导入需要先备份并明确来源。不要清空原库或删除旧 volume。
+
+本机数据库客户端连接开发库时使用主机 `127.0.0.1`、端口 `3306`、数据库 `laravel`、用户名和密码 `root/root`。容器内的 backend 仍使用 `DB_HOST=mysql` 和端口 `3306`。
 
 样例 120 条申请；新 local/testing 用户表为空时创建管理员 `admin@example.com` / `password`。Seeder 不覆盖已有账号。
 

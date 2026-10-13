@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | frontend | Vue 2.6.14、Vue Router 3.5.4、Vuex 3.6.2、Axios、Laravel Mix 5.0.9 | http://localhost:8080/login |
 | backend | PHP 7.4.33、Laravel 6.18.0、Session/CSRF/Gate | http://localhost:8001/api/v1 |
-| database | MySQL 5.7.44 | Compose 内部 mysql:3306，无主机端口 |
+| database | MySQL 5.7.44 | Compose 内部 mysql:3306；本机 127.0.0.1:3306 |
 
 前端使用 Node 14.21.3/npm 6.14.18、Jest 和 Storybook 6.5.16。固定旧版本按项目要求保留；当前 PHP Artisan 服务仅用于开发／验收，正式部署需另行配置应用服务、HTTPS 和运维策略。
 

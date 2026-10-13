@@ -1,5 +1,6 @@
 <template>
     <AuthForm
+        ref="authForm"
         title="管理画面ログイン"
         action="/auth/login"
         submit-label="ログイン"
@@ -28,8 +29,15 @@ export default {
         };
     },
     methods: {
-        goToAdmin() {
-            this.$router.push('/admin/applications');
+        async goToAdmin() {
+            try {
+                await this.$router.push('/admin/applications');
+            } catch (error) {
+                // セッション確認で遷移が中断された場合、未処理の Promise にせず画面に通知する。
+                if (this.$refs.authForm) {
+                    this.$refs.authForm.error = 'ログイン後の画面を開けませんでした。再度お試しください。';
+                }
+            }
         },
     },
 };

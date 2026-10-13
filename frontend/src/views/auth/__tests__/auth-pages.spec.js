@@ -139,6 +139,16 @@ describe('Vue authentication pages', () => {
         expect(forgot.vm.$options.data().links[0].to).toBe('/login');
     });
 
+    test('login shows a message when the navigation guard redirects back', async () => {
+        const authForm = { error: '' };
+        const push = jest.fn().mockRejectedValue(new Error('Redirected via a navigation guard'));
+
+        await Login.methods.goToAdmin.call({ $router: { push }, $refs: { authForm } });
+
+        expect(push).toHaveBeenCalledWith('/admin/applications');
+        expect(authForm.error).toBe('ログイン後の画面を開けませんでした。再度お試しください。');
+    });
+
     test('reset page carries its token and email from the route', () => {
         const router = new VueRouter({
             mode: 'abstract',
