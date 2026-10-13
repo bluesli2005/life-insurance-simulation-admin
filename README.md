@@ -24,7 +24,7 @@ Compose project 为 `life-insurance-separated`，新数据库 volume 为 `life-i
 
 ## 前端登录地址
 
-默认 Compose 环境请打开：**[http://localhost:8080/login](http://localhost:8080/login)**。登录后进入 [申込一覧](http://localhost:8080/admin/applications)。8080 是前端页面端口，8001 是后端 API 端口，不能用 `http://localhost:8001/login` 登录。
+默认 Compose 环境请打开：[http://localhost:8080/login](http://localhost:8080/login)。登录后进入 [申込一覧](http://localhost:8080/admin/applications)。8080 是前端页面端口，8001 是后端 API 端口，不能用 `http://localhost:8001/login` 登录。
 
 请始终使用 `localhost`。默认 CORS 仅允许 `http://localhost:8080` 和 `http://localhost:8081`，不允许 `http://127.0.0.1:8080`；使用后者打开页面会导致登录 POST 返回 403，当前界面会显示「この操作を行う権限がありません。」。此情况是来源地址被拒绝，不是账号权限或密码校验失败。改为上述登录地址后重新登录。
 
@@ -51,7 +51,7 @@ npm run dev
 npm run watch
 ```
 
-`dev` 先构建再启动 8080 静态／API 代理服务；`watch` 在另一终端重新编译，浏览器手动刷新。后端需在 8001 运行。已有 Compose frontend 占用 8080 时，可使用 `PORT=8082 npm run dev`，并将该 origin 加入后端 CORS。
+`dev` 先构建再启动 8080 静态／API 代理服务；`watch` 在另一终端重新编译，浏览器手动刷新。后端需在 8001 运行。已有 Compose frontend 占用 8080 时，可使用 `PORT=8082 npm run dev`；默认同源代理模式无需为 8082 增加 CORS。
 
 ```bash
 npm test

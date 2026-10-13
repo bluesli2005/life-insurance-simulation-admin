@@ -1,7 +1,7 @@
 FROM node:14.21.3-buster AS build
 WORKDIR /frontend
 COPY package*.json ./
-RUN npm ci
+RUN CYPRESS_INSTALL_BINARY=0 npm ci
 COPY . .
 ARG MIX_API_BASE_URL=
 ENV MIX_API_BASE_URL=$MIX_API_BASE_URL
