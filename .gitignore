@@ -1,6 +1,7 @@
 **/node_modules/
 **/vendor/
 **/coverage/
+**/test-results/
 **/storybook-static/
 /frontend/dist/
 **/.env
