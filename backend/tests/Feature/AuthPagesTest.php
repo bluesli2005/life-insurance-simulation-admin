@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Http\Controllers\Auth\VerificationController;
 use App\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -86,6 +88,7 @@ class AuthPagesTest extends TestCase
     {
         $user = $this->createUser();
         $token = Password::broker()->createToken($user);
+        Event::fake([PasswordReset::class]);
 
         $this->postJson('/api/v1/auth/password/reset', [
             'token' => $token,
@@ -96,6 +99,10 @@ class AuthPagesTest extends TestCase
 
         $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
         $this->assertAuthenticatedAs($user);
+        $this->assertFalse(Password::broker()->tokenExists($user, $token));
+        Event::assertDispatched(PasswordReset::class, function ($event) use ($user) {
+            return $event->user->id === $user->id;
+        });
     }
 
     public function test_invalid_password_reset_token_returns_a_japanese_validation_error()

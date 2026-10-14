@@ -36,7 +36,7 @@
 
 ## backend/app 文件职责
 
-以下职责于 2026-10-13 按实际源码核对。`backend/app/` 当前有 35 个 PHP 文件；下表路径均相对于该目录。
+以下职责于 2026-10-14 按实际源码核对。`backend/app/` 当前有 36 个 PHP 文件；下表路径均相对于该目录。
 
 | 文件 | 职责 |
 | --- | --- |
@@ -60,7 +60,7 @@
 | `Http/Middleware/CheckForMaintenanceMode.php` | 配置维护模式下仍可访问的 URI；当前未设置例外路径。 |
 | `Http/Middleware/EncryptCookies.php` | 配置不加密的 Cookie 名称；当前未设置例外 Cookie。 |
 | `Http/Middleware/RedirectIfAuthenticated.php` | 阻止已登录用户访问访客专用 API，返回 409 JSON 响应。 |
-| `Http/Middleware/TrimStrings.php` | 清理输入字符串两端空白，但不处理密码和密码确认字段。 |
+| `Http/Middleware/TrimStrings.php` | 清理输入字符串两端空白，但不处理密码、密码确认和当前密码字段。 |
 | `Http/Middleware/TrustProxies.php` | 配置代理转发请求头的识别方式。 |
 | `Http/Middleware/VerifyCsrfToken.php` | 校验会话 API 的 CSRF token、提供 XSRF-TOKEN Cookie，并把无法解密的 token 视为无效。 |
 | `Http/Requests/SimulationApplicationIndexRequest.php` | 校验申込列表的搜索词、状态和分页参数。 |
@@ -74,6 +74,7 @@
 | `Providers/EventServiceProvider.php` | 注册应用事件与监听器，包括注册事件对应的邮箱验证通知监听器。 |
 | `Providers/RouteServiceProvider.php` | 注册 Web 路由及带 Session／CSRF 的 `/api` 路由，并设置 Controller 命名空间。 |
 | `Role.php` | 定义角色模型及申请写入、删除、用户管理权限标志的布尔类型转换。 |
+| `Support/PasswordRules.php` | 提供注册、修改和重置密码共用的新密码验证规则。 |
 | `User.php` | 定义用户模型、角色和账户状态常量、可写与隐藏字段，以及与角色的关联。 |
 
 ## 当前维护文件清单
@@ -125,6 +126,7 @@ backend/app/Providers/BroadcastServiceProvider.php
 backend/app/Providers/EventServiceProvider.php
 backend/app/Providers/RouteServiceProvider.php
 backend/app/Role.php
+backend/app/Support/PasswordRules.php
 backend/app/User.php
 backend/artisan
 backend/bootstrap/app.php
@@ -192,6 +194,8 @@ backend/tests/Feature/AuthPagesTest.php
 backend/tests/Feature/AuthenticationTest.php
 backend/tests/Feature/ExampleTest.php
 backend/tests/Feature/FrameworkScaffoldTest.php
+backend/tests/Feature/InitialAdminConfigurationTest.php
+backend/tests/Feature/PasswordInputTest.php
 backend/tests/Feature/RetainedAuthScaffoldTest.php
 backend/tests/Feature/RoleAuthorizationTest.php
 backend/tests/Feature/SimulationApplicationsApiTest.php

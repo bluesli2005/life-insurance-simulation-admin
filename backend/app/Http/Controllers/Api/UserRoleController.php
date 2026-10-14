@@ -77,6 +77,6 @@ class UserRoleController extends Controller
 
     private function isReservedAdmin(User $user)
     {
-        return $user->email === 'admin@example.com';
+        return $user->email === config('auth.initial_admin.email');
     }
 }

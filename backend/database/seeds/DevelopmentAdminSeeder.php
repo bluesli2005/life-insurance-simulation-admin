@@ -16,8 +16,8 @@ class DevelopmentAdminSeeder extends Seeder
 
         User::create([
             'name' => '管理者',
-            'email' => env('ADMIN_EMAIL', 'admin@example.com'),
-            'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
+            'email' => config('auth.initial_admin.email'),
+            'password' => Hash::make(config('auth.initial_admin.password')),
             'role_id' => Role::where('code', User::ROLE_SUPER_ADMIN)->value('id'),
         ]);
     }

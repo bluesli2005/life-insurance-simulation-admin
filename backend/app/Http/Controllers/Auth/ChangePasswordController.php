@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\PasswordRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -13,8 +14,8 @@ class ChangePasswordController extends Controller
     public function update(Request $request)
     {
         $data = $request->validate([
-            'current_password' => ['required', 'password'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'current_password' => ['bail', 'required', 'string', 'password'],
+            'password' => PasswordRules::newPassword(),
         ]);
 
         $user = $request->user();

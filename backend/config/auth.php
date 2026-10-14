@@ -13,6 +13,12 @@ return [
     |
     */
 
+    // 開発用の初期アカウントと、その保護判定で同じ設定を使う。
+    'initial_admin' => [
+        'email' => env('ADMIN_EMAIL', 'admin@example.com'),
+        'password' => env('ADMIN_PASSWORD', 'password'),
+    ],
+
     'defaults' => [
         'guard' => 'web',
         'passwords' => 'users',

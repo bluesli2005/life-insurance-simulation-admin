@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Auth\Concerns\FormatsPasswordBrokerResponses;
 use App\User;
 use App\Providers\RouteServiceProvider;
+use App\Support\PasswordRules;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
 
@@ -33,6 +34,15 @@ class ResetPasswordController extends Controller
      */
     protected $redirectTo = RouteServiceProvider::HOME;
 
+
+    protected function rules()
+    {
+        return [
+            'token' => ['required', 'string'],
+            'email' => ['required', 'string', 'email'],
+            'password' => PasswordRules::newPassword(),
+        ];
+    }
 
     protected function credentials(Request $request)
     {
