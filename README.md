@@ -72,6 +72,15 @@ Storybook 入口为 http://localhost:6007，不需要后端。静态产物在 `f
 docker compose exec -T backend php vendor/bin/phpunit
 ```
 
+单独生成前后台测试 coverage 时，在仓库根目录执行以下命令。前端使用 Node 14 容器，后端使用运行中的 PHP 7.4/PCOV 容器；本机默认 PHP 若是 8.x，不要直接运行此项目的旧版 Laravel 测试。
+
+```bash
+docker run --rm -v "$PWD/frontend:/frontend" -w /frontend node:14.21.3-buster npm run test:coverage
+docker compose exec -T backend php vendor/bin/phpunit --coverage-text --coverage-html coverage/html --coverage-clover coverage/clover.xml
+```
+
+浏览器报告分别在 `frontend/coverage/index.html` 与 `backend/coverage/html/index.html`。需要同时运行类型检查、全部测试并生成汇总时，使用 `bash scripts/check.sh --docker`；详情见 [CI.md](CI.md)。
+
 不要对开发库运行 `migrate:fresh`，不要使用 `docker compose down -v` 删除数据。
 
 ## API 与配置

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\ApiCors;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class ApiBoundaryTest extends TestCase
@@ -28,6 +31,22 @@ class ApiBoundaryTest extends TestCase
         $this->withHeaders(['Origin' => 'http://localhost:8080'])->get('/api/v1/auth/session')
             ->assertUnauthorized()->assertHeader('Access-Control-Allow-Origin', 'http://localhost:8080')
             ->assertJsonStructure(['message'])->assertHeaderMissing('Location');
+    }
+
+    public function test_exception_response_keeps_cors_headers()
+    {
+        $request = Request::create('/api/v1/auth/session', 'GET');
+        $request->headers->set('Origin', 'http://localhost:8080');
+
+        $response = app(ApiCors::class)->handle($request, function () {
+            throw new HttpException(503);
+        });
+
+        $this->assertSame(503, $response->getStatusCode());
+        $this->assertSame('http://localhost:8080', $response->headers->get('Access-Control-Allow-Origin'));
+        $this->assertSame('true', $response->headers->get('Access-Control-Allow-Credentials'));
+        $this->assertSame('no-store, private', $response->headers->get('Cache-Control'));
+        $this->assertSame('application/json', $request->headers->get('Accept'));
     }
 
     public function test_real_csrf_check_rejects_missing_token_and_accepts_matching_token()

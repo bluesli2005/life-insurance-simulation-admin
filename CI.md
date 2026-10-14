@@ -42,6 +42,20 @@ bash scripts/check.sh --docker
 
 测试结束后，运行页面的 Summary 显示覆盖率表；同仓库 PR 的 Conversation 页面由 CI 创建或更新一条覆盖率评论，附完整报告所在的运行链接。来自 fork 或 Dependabot 的 PR 通常只有只读 token，因此仍可在 Actions Summary 和 Artifacts 查看报告。Artifacts 中的 `coverage-<commit SHA>` 包含前后台 HTML 与机器可读报告，保留 14 天。工作流失败时也尝试上传已生成的报告。分支保护是否要求该检查通过，由仓库维护者另外配置。
 
+## 单独运行前后台 coverage
+
+在仓库根目录运行；先安装锁定依赖，并启动 Compose 的 backend/mysql 服务。后端 PHPUnit 使用独立的 `laravel_testing` 数据库。命令与 `scripts/check.sh --docker` 中的测试步骤一致：
+
+```bash
+# 前端：Jest + Node 14
+docker run --rm -v "$PWD/frontend:/frontend" -w /frontend node:14.21.3-buster npm run test:coverage
+
+# 后端：PHPUnit + PHP 7.4 + PCOV
+docker compose exec -T backend php vendor/bin/phpunit --coverage-text --coverage-html coverage/html --coverage-clover coverage/clover.xml
+```
+
+前端会在终端显示覆盖率并生成 HTML、LCOV 和 JSON 汇总；后端会在终端显示覆盖率并生成 HTML 和 Clover XML。只运行其中一个命令不会更新 `coverage/summary.md`；完整检查和汇总使用 `bash scripts/check.sh --docker`。本机 PHP 8.x 与当前 Laravel 6.18.0 组合会触发弃用错误，应使用上述 PHP 7.4 容器。
+
 ## Coverage 输出与口径
 
 | 输出 | 用途 |
