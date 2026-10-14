@@ -86,4 +86,17 @@ describe('form components', () => {
         expect(SimulationApplicationForm.computed.today.call({ todayValue: () => SimulationApplicationForm.methods.todayValue(localDate) }))
             .toBe('2026-10-10');
     });
+
+    test('application form restores empty defaults when its initial value is cleared', async () => {
+        const wrapper = mount(SimulationApplicationForm, {
+            propsData: { initialValue: { application_number: 'APP-001', applicant_name: '山田 太郎' } },
+            stubs: { 'router-link': { template: '<a><slot /></a>' } },
+        });
+
+        await wrapper.setProps({ initialValue: null });
+
+        expect(wrapper.find('[name="application_number"]').element.value).toBe('');
+        expect(wrapper.find('[name="applicant_name"]').element.value).toBe('');
+        expect(wrapper.find('[name="currency"]').element.value).toBe('JPY');
+    });
 });

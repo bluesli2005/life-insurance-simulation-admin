@@ -33,3 +33,11 @@ test('network failure is visible and does not redirect in a loop', async () => {
     expect(next).toHaveBeenCalledWith(false);
     expect(store.state.navigationError).toContain('接続できませんでした');
 });
+
+test('anonymous guest navigation continues without a redirect', async () => {
+    auth.session.mockRejectedValue({ response: { status: 401 } });
+    const next = jest.fn();
+    await checkSession({ meta: { guestOnly: true } }, {}, next);
+    expect(next).toHaveBeenCalledWith();
+    expect(store.state.navigationError).toBe('');
+});

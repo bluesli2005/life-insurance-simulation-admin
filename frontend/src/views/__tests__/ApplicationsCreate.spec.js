@@ -49,4 +49,35 @@ describe('ApplicationsCreate', () => {
         expect(simulationApplicationsApi.create).toHaveBeenCalledWith(application);
         expect(router.push).toHaveBeenCalledWith('/admin/applications/12');
     });
+
+    test('registration errors return to the form without losing field feedback', async () => {
+        const wrapper = mount(ApplicationsCreate, {
+            mocks: { $router: { push: jest.fn() } },
+            stubs: { 'router-link': { template: '<a><slot /></a>' } },
+        });
+        const application = { application_number: 'SIM-012', applicant_name: '山田 太郎',
+            insured_name: '山田 花子', coverage_amount: '1000000', premium_amount: '10000',
+            currency: 'JPY', status: 'draft' };
+        simulationApplicationsApi.create.mockRejectedValueOnce({
+            response: { data: { errors: { application_number: ['申込番号は使用済みです。'] } } },
+        });
+
+        await wrapper.find('[name="application_number"]').setValue('SIM-012');
+        wrapper.findComponent(SimulationApplicationForm).vm.$emit('submit', application);
+        await wrapper.vm.$nextTick();
+        await wrapper.findAll('button').wrappers.find(button => button.text() === '確認して登録').trigger('click');
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(wrapper.text()).toContain('申込番号は使用済みです。');
+        expect(wrapper.text()).not.toContain('申込を登録できませんでした。');
+        expect(wrapper.find('[name="application_number"]').element.value).toBe('SIM-012');
+
+        simulationApplicationsApi.create.mockRejectedValueOnce(new Error('network'));
+        wrapper.findComponent(SimulationApplicationForm).vm.$emit('submit', application);
+        await wrapper.vm.$nextTick();
+        await wrapper.findAll('button').wrappers.find(button => button.text() === '確認して登録').trigger('click');
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(wrapper.text()).toContain('申込を登録できませんでした。');
+    });
 });

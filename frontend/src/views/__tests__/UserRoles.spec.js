@@ -1,7 +1,7 @@
 import { createLocalVue, mount } from '@vue/test-utils';
 import Vuex from 'vuex';
 import client from '../../api/client';
-jest.mock('../../api/client', () => ({ get: jest.fn(), post: jest.fn(), patch: jest.fn() }));
+jest.mock('../../api/client', () => ({ get: jest.fn(), post: jest.fn(), patch: jest.fn(), errorMessage: (error, fallback) => fallback }));
 import BaseToast from '../../components/BaseToast.vue';
 import BaseSelect from '../../components/BaseSelect.vue';
 import UserRoles from '../UserRoles.vue';
@@ -78,6 +78,55 @@ describe('UserRoles', () => {
 
         const wrapper = mount(UserRoles, { localVue, store: makeStore('editor') });
         await flushPromises();
+        expect(wrapper.findAll('button').wrappers.filter(button => ['削除', '復元'].includes(button.text()))).toHaveLength(0);
+    });
+
+    test('shows API failures without claiming the role or status was saved', async () => {
+        client.get.mockResolvedValue({ data: { data: [
+            { id: 2, name: '利用者', email: 'user@example.com', role: 'viewer', status: 'active' },
+        ], roles: [{ code: 'viewer', name: '閲覧者' }, { code: 'editor', name: '編集者' }] } });
+        client.patch.mockRejectedValue(new Error('network'));
+        const wrapper = mount(UserRoles, { localVue, store: makeStore() });
+        await flushPromises();
+
+        await wrapper.find('select').setValue('editor');
+        await wrapper.findAll('button').wrappers.find(button => button.text() === '保存').trigger('click');
+        await flushPromises();
+        expect(wrapper.text()).toContain('権限を変更できませんでした。');
+        expect(wrapper.vm.users[0].role).toBe('viewer');
+
+        const confirm = jest.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+        try {
+            await wrapper.findAll('button').wrappers.find(button => button.text() === '削除').trigger('click');
+            expect(client.patch).toHaveBeenCalledTimes(1);
+
+            await wrapper.findAll('button').wrappers.find(button => button.text() === '削除').trigger('click');
+            await flushPromises();
+            expect(wrapper.text()).toContain('ユーザーの状態を変更できませんでした。');
+            expect(wrapper.vm.users[0].status).toBe('active');
+        } finally {
+            confirm.mockRestore();
+        }
+    });
+
+    test('shows an error when the user list cannot be loaded', async () => {
+        client.get.mockRejectedValue(new Error('network'));
+        const wrapper = mount(UserRoles, { localVue, store: makeStore() });
+        await flushPromises();
+
+        expect(wrapper.find('[role="alert"]').text()).toContain('ユーザー一覧を取得できませんでした。');
+    });
+
+    test('computed permissions stay safe when session data is unavailable', async () => {
+        client.get.mockResolvedValue({ data: { data: [], roles: [] } });
+        const wrapper = mount(UserRoles, {
+            localVue,
+            store: new Vuex.Store({ state: { session: null } }),
+        });
+        await flushPromises();
+
+        expect(wrapper.vm.currentUserId).toBeUndefined();
+        expect(wrapper.vm.canDeleteUsers).toBe(false);
         expect(wrapper.findAll('button').wrappers.filter(button => ['削除', '復元'].includes(button.text()))).toHaveLength(0);
     });
 });

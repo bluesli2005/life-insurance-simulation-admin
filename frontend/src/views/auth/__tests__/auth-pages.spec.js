@@ -66,18 +66,21 @@ describe('Vue authentication pages', () => {
                 fields: [
                     { name: 'current_password', label: '現在のパスワード', type: 'password' },
                     { name: 'password', label: '新しいパスワード', type: 'password' },
+                    { name: 'remember', label: '保持する', type: 'checkbox' },
                 ],
             },
         });
 
         await wrapper.find('input[name="current_password"]').setValue('old-password-123');
         await wrapper.find('input[name="password"]').setValue('new-password-123');
+        await wrapper.find('input[name="remember"]').setChecked(true);
         await wrapper.find('form').trigger('submit');
         await flushPromises();
         await wrapper.vm.$nextTick();
 
         expect(wrapper.vm.form.current_password).toBe('');
         expect(wrapper.vm.form.password).toBe('');
+        expect(wrapper.vm.form.remember).toBe(false);
         expect(wrapper.text()).toContain('パスワードを変更しました。');
     });
 
@@ -147,6 +150,9 @@ describe('Vue authentication pages', () => {
 
         expect(push).toHaveBeenCalledWith('/admin/applications');
         expect(authForm.error).toBe('ログイン後の画面を開けませんでした。再度お試しください。');
+
+        await Login.methods.goToAdmin.call({ $router: { push }, $refs: {} });
+        expect(authForm.error).toBe('ログイン後の画面を開けませんでした。再度お試しください。');
     });
 
     test('reset page carries its token and email from the route', () => {
@@ -184,5 +190,55 @@ describe('Vue authentication pages', () => {
     test('email verification page is prepared but has no application route', () => {
         const verification = mount(EmailVerification, { localVue, stubs: { AuthForm: true } });
         expect(verification.vm.links[0].to).toBe('/login');
+    });
+
+    test('confirmation, registration, and password reset navigate after success', async () => {
+        const routeInstance = new VueRouter({
+            mode: 'abstract',
+            routes: [{ path: '/password/reset/:token', component: ResetPassword }],
+        });
+        routeInstance.push('/password/reset/token-123?email=admin@example.com');
+        const push = jest.spyOn(routeInstance, 'push').mockResolvedValue();
+        const options = { localVue, router: routeInstance, stubs: { AuthForm: true } };
+
+        for (const Page of [ConfirmPassword, Register, ResetPassword]) {
+            const wrapper = mount(Page, options);
+            wrapper.findComponent(AuthForm).vm.$emit('success');
+        }
+
+        expect(push).toHaveBeenCalledTimes(3);
+        expect(push).toHaveBeenNthCalledWith(1, '/admin/applications');
+        expect(push).toHaveBeenNthCalledWith(2, '/admin/applications');
+        expect(push).toHaveBeenNthCalledWith(3, '/admin/applications');
+    });
+
+    test('auth success without optional feedback props preserves submitted values', async () => {
+        client.post.mockResolvedValue({ status: 200 });
+        const wrapper = mount(AuthForm, {
+            localVue,
+            propsData: {
+                title: '確認', action: '/auth/password/confirm', submitLabel: '確認',
+                fields: [{ name: 'password', label: 'パスワード', type: 'password' }],
+            },
+        });
+        await wrapper.find('[name="password"]').setValue('current-password');
+        await wrapper.find('form').trigger('submit');
+        await flushPromises();
+
+        expect(wrapper.vm.form.password).toBe('current-password');
+        expect(wrapper.vm.status).toBe('');
+        expect(wrapper.emitted('success')).toHaveLength(1);
+    });
+
+    test('reset page accepts a token when the email query is absent', () => {
+        const router = new VueRouter({
+            mode: 'abstract',
+            routes: [{ path: '/password/reset/:token', name: 'reset', component: ResetPassword }],
+        });
+        router.push({ name: 'reset', params: { token: 'token-456' } });
+        const wrapper = mount(ResetPassword, { localVue, router, stubs: { AuthForm: true } });
+
+        expect(wrapper.vm.fields[0].value).toBe('token-456');
+        expect(wrapper.vm.fields[1].value).toBe('');
     });
 });
