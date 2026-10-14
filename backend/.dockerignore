@@ -1,0 +1,5 @@
+vendor
+.env
+storage/logs/*
+.phpunit.result.cache
+coverage

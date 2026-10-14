@@ -1,88 +1,78 @@
 # 系统架构
 
-## 1. 技术组成
-
-| 层 | 技术 | 运行位置 |
-| --- | --- | --- |
-| 管理界面 | Vue 2、Vue Router、Vuex、Axios、Laravel Mix | 浏览器 |
-| Web 与 API | Laravel 6.18、PHP 7.4、Eloquent | Docker `app` 容器 |
-| 数据库 | MySQL 5.7.44 | Docker `mysql` 容器 |
-| 前端测试 | Jest 26、Vue Test Utils 1 | Node.js 14 / npm 6 |
-| 后端测试 | PHPUnit 9 | Docker `app` 容器，连接 `laravel_testing` |
-
-本地 Docker Compose 将应用暴露在 `127.0.0.1:8000`，MySQL 暴露在 `127.0.0.1:3306`；MySQL 默认字符集/排序规则为 `utf8mb4` / `utf8mb4_unicode_ci`。应用容器通过服务名 `mysql:3306` 连接数据库。
-
-## 2. 请求与界面流程
+## 前后端边界
 
 ```text
 浏览器
-  ├─ GET /login、/register
-  │    └─ Laravel 返回 resources/spa.html -> Vue AuthApp -> 登录/注册页面
-  ├─ GET /password/*
-  │    └─ Laravel 认证 Controller -> 同一静态 HTML 启动壳
-  └─ GET /admin/{path}
-       └─ auth 中间件 -> resources/spa.html -> GET /admin/api/v1/session -> Vue AdminApp
-            ├─ Vue Router -> 一览 / 登记 / 详情 / 编辑 / 修改密码 / 权限管理
-            ├─ Vuex -> 列表、筛选、分页状态
-            └─ Axios -> /admin/api/v1/simulation-applications
-                 └─ web + auth + CSRF -> Controller
-                      -> Form Request 校验 -> Eloquent -> MySQL
+  页面／资源 → frontend nginx :8080
+  /api/v1    → frontend 代理 → backend PHP :8000 → mysql:3306
+  可选直连   → localhost:8001/api/v1（明确 CORS origin + credentials）
+
+frontend/                         backend/
+Vue 2 / Router / Vuex             Laravel 6.18 / PHP 7.4
+Axios / Jest / Storybook          Session / CSRF / Gate / PHPUnit
+npm + webpack.mix.js              Composer + artisan
+dist/ 静态产物                    public/index.php API 入口
 ```
 
-登录、注册、密码和后台页面均由 Vue 管理。Laravel 只返回不含动态模板语法的 `resources/spa.html`；Vue 根据 URL 启动认证或后台界面。认证表单通过 Axios 使用 Laravel Session 和 `XSRF-TOKEN` Cookie 保护；退出登录也使用同源 POST。
+根目录仅组织部署、规范和文档。前端构建不依赖后端源码、PHP 或数据库；后端不安装 npm、不读取 frontend/dist、不返回管理页面。两端通过 HTTP 通信，可以分别提取为独立仓库。
 
-`/admin/{path}` 由 Laravel 返回同一静态 HTML 入口，因此 Vue Router 的 history 路由可直接刷新。未登录访问管理页会进入登录页面。后台启动前请求受 `auth` 保护的 `/admin/api/v1/session`，获取姓名、角色名称和 Gate 权限并写入 Vuex；导航和操作按钮从该状态读取。业务 API 使用 Laravel Web Session 认证和 CSRF，不使用单独的 Token 服务。HTML 响应禁缓存，以免 CSRF Cookie 过期时复用旧页面。
+## 前端组织与交互
 
-## 3. 后端边界
+- `src/app.js` 创建 Vue 实例；`App.vue` 根据路由与会话选择 `AdminApp` 或 `AuthApp`。
+- `router/index.js` 管理认证和申込／用户管理页面；history fallback 由 frontend 服务处理。静态资源缺失返回 404，API 不进入页面 fallback。
+- `AdminApp.vue` 管理头部账号、左侧菜单和右侧主体。Vue Router 的 active-class 区分当前模块，申込新增／详情／编辑页面保持申込一覧选中。権限管理菜单按会话权限显示。
+- `store/index.js` 保存会话、权限和申込列表状态；搜索按钮触发查询，分页参数与后端统一。
+- `api/client.js` 共用 Axios 配置与错误处理；`auth.js`、`simulationApplications.js` 封装接口。
+- 基础控件位于 `src/components/`；权限下拉使用 `BaseSelect`，支持禁用状态；`AuthForm` 和 `SimulationApplicationForm` 共用认证／申込表单。
+- 三个表单入口都启用 `novalidate`。页面用日文行内错误反馈，后端继续做最终校验；保留输入类型和必要约束属性。
+- `BaseToast` 通过 `message`、`duration` 接收提示，默认 3000ms 后发出 `dismiss`，父页面清空消息，Vue transition 执行 300ms fade-out。新消息重置计时，组件销毁清理计时器。顶部固定居中，背景 `rgba(254, 249, 195, .65)`，深色字，`role=status`；减少动态效果设置下禁用动画。
+- 用户管理成功消息接入 Toast；失败消息继续显示页面 error。详情页编辑／删除为蓝／红按钮，hover 加深背景并显示轻微阴影，禁用删除按钮不响应 hover。
 
-- `routes/web.php` 注册登录、注册、登出、密码确认/重置/修改、管理页入口和同源业务 API；邮箱验证路由保持关闭。
-- `RegisterController` 将新账号以 `viewer` 角色写入 `users` 表；`ChangePasswordController` 验证旧密码后更新哈希与 remember token。
-- `AuthServiceProvider` 定义写入、删除和用户管理权限；后端 Gate 读取 `roles` 表的权限字段。`UserRoleController` 供有用户管理权限者列出用户和修改角色；标记删除与恢复还要求操作者属于 `super_admin`。禁止降级 `admin@example.com` 或最后一名最高管理者，也禁止标记删除自己或 `admin@example.com`。
-- `SimulationApplicationController` 负责 CRUD、关键词搜索、状态筛选和分页。
-- `SimulationApplicationRequest` 校验新增/更新字段；`SimulationApplicationIndexRequest` 校验列表查询参数。
-- `SimulationApplicationResource` 统一 JSON 响应格式。
-- `SimulationApplication` 定义状态常量及可写字段。
-- `simulation_applications` 表由 `2026_10_08_000000_create_simulation_applications_table.php` 创建；按状态和生效日建立联合索引。
+## 认证与权限
 
-API 基础路径：`/admin/api/v1/simulation-applications`
+启动 GET `/api/v1/auth/csrf` 初始化 Cookie；Router 查询 `/auth/session` 更新数据库权限。匿名保护路由转 /login，已登录 guest 页面转 /admin/applications；网络失败显示日文反馈。
 
-公开注册默认只读；`super_admin` 可读写、删除和管理角色，`editor` 可读写，`viewer` 只读。`roles` 表保存角色代码、日文名称及写入/删除/用户管理权限标记；`users.role_id` 外键引用它。权限管理 API：`GET /admin/api/v1/users`（返回用户和角色权限矩阵）、`PATCH /admin/api/v1/users/{id}/role`（分配已有角色）、`PATCH /admin/api/v1/users/{id}/status`（仅最高管理者将其他账号切换为 `active` / `deleted`）；注册请求中的角色字段不被接受。
+Axios 使用 JSON 请求头、withCredentials、XSRF-TOKEN Cookie 和 X-XSRF-TOKEN header。401 清除会话并导航；419 不自动重放写操作。
+
+Laravel API 路由使用 `session.api`：Cookie 加密、Cookie 响应、Session、CSRF 和模型绑定；认证使用 web guard。ApiCors 处理明确 origin 的预检并向错误响应添加 CORS 信息。登录／注册更新 Session，退出销毁会话。
+
+权限由数据库 roles 和 Gate 判定。viewer 只读，editor 可创建／编辑，super_admin 可删除和管理用户。前端按钮仅辅助交互，后端独立验证权限。被标记 deleted 的账号不能登录、重置密码或继续使用旧会话；保护账号和最后最高管理员规则保留。
+
+## API 路径
+
+下表统一以 `/api/v1` 为前缀：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| GET | `/` | 列表、搜索、筛选、分页 |
-| POST | `/` | 新增申请 |
-| GET | `/{id}` | 申请详情 |
-| PUT / PATCH | `/{id}` | 更新申请 |
-| DELETE | `/{id}` | 删除申请 |
+| GET | /auth/csrf | CSRF 初始化，204 |
+| POST | /auth/login、/auth/logout | 登录／退出，204 |
+| POST | /auth/register | 默认 viewer 注册，201 |
+| GET | /auth/session | 用户与 Gate 权限 |
+| POST | /auth/password/confirm、/auth/password/change | 密码确认／修改 |
+| POST | /auth/password/email、/auth/password/reset | 找回／重置 |
+| GET / POST | /simulation-applications | 搜索分页／创建 |
+| GET / PUT / PATCH / DELETE | /simulation-applications/{id} | 详情／更新／删除 |
+| GET | /simulation-applications/{id}/history | 申込操作记录；需删除权限，支持已软删除记录 |
+| GET | /users | 用户与角色矩阵 |
+| PATCH | /users/{id}/role、/users/{id}/status | 权限／账号状态更新 |
 
-本地管理员及示例申请 Seeder 仅在 `local`、`testing` 环境运行。标准示例共 120 条，五种状态各 24 条；姓名和备注为日文。重跑会刷新标准样例的姓名和备注，不重复创建记录，也不改动其余业务字段。
+错误状态：401 未认证、403 无权限／不允许 origin、404 不存在、409 已登录调用 guest 接口、419 CSRF 失效、422 输入校验、429 限流。业务 Resource 保留 data、links、meta 和 validation errors。
 
-## 4. 前端边界
+Password Broker 通过后端 `FRONTEND_URL` 生成 `/password/reset/{token}?email=...` 邮件链接；重置后保留自动登录行为。邮箱验证未开放，相关框架扩展点保留。
 
-- `resources/spa.html` 是唯一实际使用的静态页面入口；不使用 Blade 模板。`AdminSessionController` 提供当前用户 ID、用户名、数据库角色代码和名称，以及 Gate 权限标记。
-- `resources/js/app.js` 创建 Vue 实例并装配 Router、Vuex。
-- `resources/js/views/AuthApp.vue` 与 `resources/js/views/auth/` 管理登录、注册、密码确认和找回/重置密码；邮箱验证组件暂不开放。
-- `resources/js/views/PasswordChange.vue` 管理登录后的密码修改表单；`UserRoles.vue` 管理角色分配界面。
-- `resources/js/router/index.js` 定义 `/admin/applications` 下的页面路由。
-- `resources/js/api/simulationApplications.js` 封装同源 API 请求。
-- `resources/js/store/index.js` 管理当前会话权限、申请列表、分页、筛选、加载和错误状态。
-- `resources/js/components/` 保存表单控件、表格、错误提示及内容状态组件。
-- `resources/js/views/` 保存管理布局、申请一览、登记、详情和编辑页面。
+## 运行与数据
 
-界面显示文案为日文；API 校验错误由日文 Laravel validation/passwords 字典提供。重置密码邮件需在 `.env` 配置可用的 SMTP。
+Compose project 为 `life-insurance-separated`；backend 仅挂载 `./backend`，frontend 镜像仅以 `./frontend` 构建，最终使用 nginx 静态镜像。8001、8080 绑定本机回环地址；MySQL 映射主机 3306，未限定绑定地址。容器内仍使用 mysql:3306，数据库使用独立 volume。
 
-## 5. 数据库与测试隔离
+开发库 `laravel`、测试库 `laravel_testing` 分离；开发账号 root/root。原业务数据库不自动导入；目录清理不操作数据库或 Docker volume。Session Cookie HttpOnly、SameSite=lax；跨站部署需单独配置和验证 HTTPS、Cookie domain 与 SameSite。
 
-- 开发数据库：`laravel`，用户名和密码均为 `root`。
-- 管理员邮箱和密码哈希以 `users` 表为准；角色定义和权限以 `roles` 表为准，`users.role_id` 记录用户所属角色。`users.status` 默认 `active`；标记删除仅改为 `deleted`，保留用户行、密码哈希及关联数据。登录、密码重置和现有会话的受保护请求均拒绝已删除账号。开发 Seeder 仅在 `users` 为空时创建最高管理者；迁移保留了现有 `admin@example.com` 的最高权限。
-- 测试数据库：`laravel_testing`，PHPUnit 配置强制指定该库。
-- PHPUnit Feature Test 使用 `RefreshDatabase`，只清理测试数据库。
-- 前端 Jest 测试覆盖基础表单控件、字段错误和列表搜索提交行为。
-- 生产构建使用 `npm run production` 输出 `public/js`、`public/css` 和 Mix manifest。
+`frontend/node_modules`、`backend/vendor` 为当前依赖；`frontend/dist` 为独立静态服务产物；`backend/bootstrap/cache` 和 `backend/storage` 为 Laravel 必要运行目录，均不能当作迁移遗留目录删除。coverage 和 storybook-static 是可重新生成的报告／构建产物。
 
-安装、迁移、Seeder 和测试命令以 [README.md](README.md) 为准。
+申込使用 `deleted_at` 软删除；普通查询和路由绑定自动排除已删除记录，唯一申込番号仍由数据库保留。`simulation_application_audits` 记录 API 创建／编辑／删除的操作者与完整前后快照，写入与业务操作共用事务；历史接口只允许具备删除权限的用户读取。旧数据没有追溯历史，Seeder 直接写入的数据也不产生 API 操作记录。部分更新根据请求字段与现存字段合成最终日期进行校验。
 
-## 6. 保留的 Laravel 脚手架
+## 验证与限制
 
-项目中仍保留 Laravel 初始工程自带的控制器、语言文件、路由文件和默认测试等脚手架内容。原 `resources/views/admin.blade.php`、`resources/views/auth/login.blade.php`、`resources/views/welcome.blade.php` 已按用户确认删除；`resources/views/.gitkeep` 仅保留 Laravel 的视图目录，不参与页面渲染。
+Jest 覆盖组件、页面、请求和路由，Toast 测试验证计时与销毁；Storybook 用于基础控件预览。PHPUnit 覆盖认证、业务、权限、账号状态、CORS 和 CSRF。PHPUnit 通过不等于真实 CSRF／Cookie／SMTP 已验收，HTTP 和浏览器验证需单独记录。
+
+固定旧版本依赖、正式生产应用服务／HTTPS、旧数据导入、真实 SMTP 投递仍为限制。本次维护记录与实际验证结果见 DEVELOPMENT_PLAN.md。

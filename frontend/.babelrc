@@ -1,0 +1,33 @@
+{
+    "presets": [
+        "@babel/preset-env"
+    ],
+    "env": {
+        "test": {
+            "presets": [
+                [
+                    "@babel/preset-env",
+                    {
+                        "targets": {
+                            "node": "14.21.3"
+                        }
+                    }
+                ]
+            ],
+            "plugins": [
+                [
+                    "babel-plugin-istanbul",
+                    {
+                        "include": [
+                            "src/**/*.vue"
+                        ],
+                        "extension": [
+                            ".vue"
+                        ]
+                    },
+                    "vue-script-coverage"
+                ]
+            ]
+        }
+    }
+}

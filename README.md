@@ -1,79 +1,99 @@
-# シミュレーション申込・管理
+# 生命保険シミュレーション申込・管理
 
-Laravel 6.18 + Vue 2 的保险模拟申请管理系统。开发阶段、版本要求及验收记录见[开发计划](DEVELOPMENT_PLAN.md)，系统分层见[架构说明](ARCHITECTURE.md)。
+日文管理系统。Vue SPA 与 Laravel API 分别位于 `frontend/`、`backend/`，依赖、构建、测试和运行服务完全分离。根目录仅保留部署配置、项目规范和文档。
 
-## 首次安装
+## 技术与入口
 
-从空白环境安装，请按[首次安装说明](INSTALLATION.md)逐步执行。项目使用 Docker 运行 PHP 7.4 和 MySQL 5.7；宿主机只需 Docker Desktop、nvm/Node.js。
+| 模块 | 技术 | 本地入口 |
+| --- | --- | --- |
+| frontend | Vue 2.6.14、Vue Router 3.5.4、Vuex 3.6.2、Axios、Laravel Mix 5.0.9 | http://localhost:8080/login |
+| backend | PHP 7.4.33、Laravel 6.18.0、Session/CSRF/Gate | http://localhost:8001/api/v1 |
+| database | MySQL 5.7.44 | Compose 内部 mysql:3306；本机 127.0.0.1:3306 |
 
-安装完成后访问 <http://127.0.0.1:8000/login>。本地默认管理员：`admin@example.com` / `password`。请勿在生产环境使用此凭据。
+前端使用 Node 14.21.3/npm 6.14.18、Jest 和 Storybook 6.5.16。固定旧版本按项目要求保留；当前 PHP Artisan 服务仅用于开发／验收，正式部署需另行配置应用服务、HTTPS 和运维策略。
 
-登录、注册、密码确认、找回、重置和修改界面由 Vue 管理。可在 `/register` 注册账号，登录后在 `/admin/password` 修改密码。账号资料保存在 `users` 表，`users.role_id` 关联独立的 `roles` 表；密码仅保存哈希。邮箱验证暂未启用，找回密码需要有效 SMTP 配置。
+## 安装与运行
 
-页面统一使用 `resources/spa.html` 静态入口和 Vue；应用路由不再渲染 Blade。后台从 `/admin/api/v1/session` 读取登录用户及权限，表单通过 Laravel 的 Session 与 CSRF Cookie 提交。原有三份 `.blade.php` 页面已删除；`resources/views` 仅保留空目录占位。
+首次安装按 [INSTALLATION.md](INSTALLATION.md) 准备依赖、环境文件、APP_KEY 和数据库。已完成初始化后，在仓库根目录执行：
 
-角色权限由 `roles` 表中的布尔字段控制：`super_admin`（最高管理者）可查看、新增、编辑、删除申入并在 `/admin/users` 管理用户角色；`editor` 可查看、新增、编辑；`viewer` 只读。公开注册默认 `viewer`，仅有用户管理权限的账号能分配角色。最高管理者还能在用户管理页将其他账号标记为“削除済み”或恢复；这只修改 `users.status`，不删除数据库记录。被标记删除的账号不能登录或重置密码，已有会话在下次受保护请求时失效。`admin@example.com` 和当前账号不能标记删除。注册仍无审核和邮箱验证，公开部署前应限制注册入口。
+```bash
+docker compose up -d --build
+```
 
-## 常用命令
+Compose project 为 `life-insurance-separated`，新数据库 volume 为 `life-insurance-separated_mysql57_data`。旧业务数据库不会自动导入，也不会被覆盖。开发样例管理员为 `admin@example.com` / `password`，只在空的 local/testing 用户表创建，Seeder 不覆盖已有账号。
 
-```sh
-# 启动/停止服务
-docker compose up -d
-docker compose down
+## 前端登录地址
 
-# 数据库迁移和示例数据
-docker compose exec app php artisan migrate --force
-docker compose exec app php artisan db:seed --force
+默认 Compose 环境请打开：[http://localhost:8080/login](http://localhost:8080/login)。登录后进入 [申込一覧](http://localhost:8080/admin/applications)。8080 是前端页面端口，8001 是后端 API 端口，不能用 `http://localhost:8001/login` 登录。
 
-# 前端构建和测试
+请始终使用 `localhost`。默认 CORS 仅允许 `http://localhost:8080` 和 `http://localhost:8081`，不允许 `http://127.0.0.1:8080`；使用后者打开页面会导致登录 POST 返回 403，当前界面会显示「この操作を行う権限がありません。」。此情况是来源地址被拒绝，不是账号权限或密码校验失败。改为上述登录地址后重新登录。
+
+## 当前功能与界面
+
+- 登录、记住登录、退出、注册默认只读；密码确认、修改、找回与重置。邮箱验证未开放。
+- 申込列表使用搜索按钮提交，支持状态筛选及 10/20/30/50 条分页；新增确认、详情、编辑及软删除。已删除记录从普通列表和详情隐藏，数据库保留原记录和申込番号。
+- 管理页左侧显示申込一覧、権限管理（按权限显示）、パスワード変更；当前模块高亮，申込子页面保持列表菜单选中。
+- 所有表单使用 `novalidate`，通过页面内日文消息显示校验错误。服务端校验与权限检查继续生效。
+- 権限管理使用 `BaseSelect`；保存、删除／恢复成功消息使用顶部共用 `BaseToast`。浅黄色半透明背景、深色文字，3 秒后启动 0.3 秒淡出动画；减少动态效果设置下不播放淡出。
+- 申込詳細编辑按钮为蓝色，删除按钮为红色；hover 时加深颜色并增加轻微阴影。该样式只应用于详情页。
+
+后端数据库和 Gate 决定权限：viewer 只读，editor 可新增／编辑，super_admin 可删除及管理用户。账号标记删除会保留数据并禁止登录；保护账号和最后最高管理员约束继续生效。
+
+申込的 API 创建、编辑、删除在同一数据库事务内记录操作者、动作和变更前后数据。具有申込删除权限的用户可通过 `GET /api/v1/simulation-applications/{id}/history` 查询历史，包括已软删除记录；当前页面未提供历史或恢复入口。部分更新也会检查最终开始日不晚于结束日。已有数据不会自动生成过去的操作记录。
+
+## 前端开发与检查
+
+在 `frontend/` 使用 Node 14/npm 6：
+
+```bash
 npm ci
 npm run dev
+npm run watch
+```
+
+`dev` 先构建再启动 8080 静态／API 代理服务；`watch` 在另一终端重新编译，浏览器手动刷新。后端需在 8001 运行。已有 Compose frontend 占用 8080 时，可使用 `PORT=8082 npm run dev`；默认同源代理模式无需为 8082 增加 CORS。
+
+```bash
+npm test
 npm run production
 npm run storybook
 npm run build-storybook
-npm test
-npm run test:coverage
-
-# 后端测试（使用独立的 laravel_testing 数据库）
-docker compose exec -T mysql mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS laravel_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
-docker compose exec -T app php vendor/bin/phpunit
-npm run test:php:coverage
 ```
 
-## 数据库
+Playwright E2E 测试需先启动 Compose 服务，并在运行测试的电脑安装 Google Chrome。在 `frontend/` 执行 `npm run test:e2e`；打开交互界面使用 `npm run test:e2e:ui`（即 `playwright test --config=playwright.config.js --ui`）。可用 `E2E_BASE_URL` 指定其他前端地址。测试只检查登录页空表单的服务端校验，不创建数据。Playwright 固定为支持 Node 14 的 1.34.3；当前本机使用 Chrome 运行。
 
-Docker Compose 使用 MySQL 5.7.44。数据库 `laravel`，用户名/密码 `root` / `root`；容器内地址 `mysql:3306`，宿主机地址 `127.0.0.1:3306`，字符集 `utf8mb4`。数据保存在命名卷 `mysql57_data`。`docker compose down` 不会删除数据；不要使用 `docker compose down -v`，除非确认要永久删除数据库。
+Cypress 的同一场景可在 `frontend/` 执行 `npm run test:cypress`；交互界面使用 `npm run test:cypress:ui`（即 `cypress open --e2e`），在界面中选择 Chrome 和测试文件。首次在本机安装依赖后，若缺少 Cypress 浏览器程序，运行 `npx cypress install`。Cypress 固定为支持 Node 14 的 12.17.4；测试使用本机 Chrome，需先启动 Compose 服务。`E2E_BASE_URL` 同样适用。
 
-主要业务表 `simulation_applications` 保存保险模拟申请：
+Storybook 入口为 http://localhost:6007，不需要后端。静态产物在 `frontend/storybook-static/`；生产页面产物在 `frontend/dist/`，不复制到 backend，也不提交到 Git。构建产物可按需重新生成，不能删除正在使用的静态服务目录。
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `id` | BIGINT | 主键 |
-| `application_number` | VARCHAR(50) | 申込番号，唯一 |
-| `applicant_name` / `insured_name` | VARCHAR(100) | 申请人 / 被保险人姓名（日文示例） |
-| `insured_birth_date` | DATE | 被保险人生年月日 |
-| `beneficiary_name` | VARCHAR(100)，可空 | 受取人氏名 |
-| `coverage_amount` / `premium_amount` | DECIMAL(15,2) | 保険金額 / 保険料 |
-| `currency` | CHAR(3) | 通貨，默认 `JPY` |
-| `status` | VARCHAR(20) | `draft`、`submitted`、`approved`、`rejected`、`cancelled` |
-| `effective_date` / `expiry_date` | DATE | 适用开始日 / 结束日（可空） |
-| `notes` | TEXT，可空 | 日文备注 |
-| `created_at` / `updated_at` | TIMESTAMP | 创建、更新时间 |
+后端测试在仓库根目录执行，使用独立 `laravel_testing` 数据库：
 
-Laravel 还使用 `users` 管理账号、`roles` 管理角色与权限、`password_resets` 保存密码重置令牌、`failed_jobs` 保存失败队列任务；`migrations` 记录迁移。`users.role_id` 外键引用 `roles.id`，默认关联 `viewer`；`users.status` 默认 `active`，软删除时改为 `deleted`，恢复时改回 `active`，不会物理删除用户行。`roles` 包含唯一 `code`、日文 `name`，以及 `can_write_applications`、`can_delete_applications`、`can_manage_users` 三个权限字段；已登录用户默认可以查看申入。业务表按 `status`、`effective_date` 建立联合索引。本地 Seeder 只在 `users` 表为空时创建最高管理者，重跑不会覆盖已注册账号或修改后的密码；另提供 120 条日文示例申请（五种状态各 24 条）。Seeder 只在 `local`、`testing` 环境运行。
-
-## 项目文件说明
-
-逐个说明项目文件的职责、关键调用关系，以及哪些是 Laravel 脚手架、构建生成文件或目录占位文件，请看[项目文件说明](PROJECT_FILES.md)。该清单按仓库中的项目文件维护；`vendor/`、`node_modules/`、本地 `.env` 和测试覆盖率报告属于依赖、私有配置或运行产物，不逐项列举。
-
-查看表和迁移状态：
-
-```sh
-docker compose exec app php artisan migrate:status
-docker compose exec mysql mysql -uroot -proot laravel -e 'SHOW TABLES; DESCRIBE simulation_applications;'
+```bash
+docker compose exec -T backend php vendor/bin/phpunit
 ```
 
-测试使用独立数据库 `laravel_testing`，PHPUnit 会刷新该库。不要把测试环境指向开发库 `laravel`。
-PHP 覆盖率使用 Docker PHP 镜像中的 PCOV。Dockerfile 更新后执行 `docker compose up -d --build app`；HTML 报告输出到 `coverage/php`。
+单独生成前后台测试 coverage 时，在仓库根目录执行以下命令。前端使用 Node 14 容器，后端使用运行中的 PHP 7.4/PCOV 容器；本机默认 PHP 若是 8.x，不要直接运行此项目的旧版 Laravel 测试。
 
-Storybook 使用与现有 Vue 2 / Webpack 4 / Node 14 配套的 6.5.16。执行 `npm run storybook` 后访问 <http://localhost:6006>；`npm run build-storybook` 会生成 `storybook-static/` 静态站点。当前 Storybook 主版本已不再维护 Vue 2 支持；升级 Storybook 前需先规划 Vue 3 或 Node/Webpack 工具链升级。
+```bash
+docker run --rm -v "$PWD/frontend:/frontend" -w /frontend node:14.21.3-buster npm run test:coverage
+docker compose exec -T backend php vendor/bin/phpunit --coverage-text --coverage-html coverage/html --coverage-clover coverage/clover.xml
+```
+
+浏览器报告分别在 `frontend/coverage/index.html` 与 `backend/coverage/html/index.html`。需要同时运行类型检查、全部测试并生成汇总时，使用 `bash scripts/check.sh --docker`；详情见 [CI.md](CI.md)。
+
+不要对开发库运行 `migrate:fresh`，不要使用 `docker compose down -v` 删除数据。
+
+## API 与配置
+
+API 统一为 `/api/v1`，使用 JSON、Session Cookie 和 CSRF。默认由 frontend 代理到 backend；跨端口直连需设置构建变量 `MIX_API_BASE_URL`、后端明确的 `CORS_ALLOWED_ORIGINS` 和 Cookie 凭证。统一使用 localhost，避免与 127.0.0.1 混用。前端变量为公开信息，数据库／SMTP 等秘密配置仅放在后端。
+
+密码重置邮件链接由 `FRONTEND_URL` 控制，真实 SMTP 投递尚未验收。
+
+架构：[ARCHITECTURE.md](ARCHITECTURE.md)；目录：[PROJECT_FILES.md](PROJECT_FILES.md)；实施和验收记录：[DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。
+
+
+## 提交检查与 CI
+
+启用本地提交检查：`git config --local core.hooksPath .githooks`。手动执行：`bash scripts/check.sh --docker`。
+
+提交前运行前后台类型/语法检查、Jest/PHPUnit 与 coverage；GitHub 在 main push、PR 时使用同一入口，PR 评论与 Actions Summary 显示覆盖率，Artifacts 提供 HTML 报告。配置与报告路径见 [CI.md](CI.md)。
