@@ -82,8 +82,11 @@
 ```text
 .editorconfig
 .gitattributes
+.githooks/pre-commit
+.github/workflows/ci.yml
 .gitignore
 ARCHITECTURE.md
+CI.md
 DEVELOPMENT_PLAN.md
 INSTALLATION.md
 PROJECT_FILES.md
@@ -160,6 +163,8 @@ backend/database/migrations/2026_10_09_020000_add_status_to_users_table.php
 backend/database/seeds/DatabaseSeeder.php
 backend/database/seeds/DevelopmentAdminSeeder.php
 backend/database/seeds/SimulationApplicationSeeder.php
+backend/phpstan.neon
+backend/phpstan-stubs/Authenticate.stub
 backend/phpunit.xml
 backend/public/.htaccess
 backend/public/index.php
@@ -203,6 +208,9 @@ backend/tests/Feature/UserDeletionTest.php
 backend/tests/TestCase.php
 backend/tests/Unit/ExampleTest.php
 backend/tests/Unit/SimulationApplicationTest.php
+scripts/check.sh
+scripts/coverage-summary.py
+scripts/test-ci.py
 docker-compose.yml
 frontend/.babelrc
 frontend/.dockerignore
@@ -212,12 +220,14 @@ frontend/.storybook/main.js
 frontend/.storybook/preview.js
 frontend/Dockerfile
 frontend/jest.config.js
+frontend/jsconfig.json
 frontend/nginx.conf
 frontend/package-lock.json
 frontend/package.json
 frontend/public/favicon.ico
 frontend/public/index.html
 frontend/public/robots.txt
+frontend/scripts/jest-vue-transformer.js
 frontend/scripts/serve.js
 frontend/src/App.vue
 frontend/src/api/__tests__/client.spec.js
@@ -247,6 +257,7 @@ frontend/src/components/ContentState.vue
 frontend/src/components/SimulationApplicationForm.stories.js
 frontend/src/components/SimulationApplicationForm.vue
 frontend/src/components/__tests__/BaseToast.spec.js
+frontend/src/components/__tests__/coverage-transformer.spec.js
 frontend/src/components/__tests__/form-components.spec.js
 frontend/src/router/__tests__/session.spec.js
 frontend/src/router/index.js

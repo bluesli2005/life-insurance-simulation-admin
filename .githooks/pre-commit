@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+
+# Tests run against the working tree, so the checked files must match the index.
+if ! git diff --quiet -- backend frontend scripts .githooks .github docker-compose.yml     || [ -n "$(git ls-files --others --exclude-standard -- backend frontend scripts .githooks .github)" ]; then
+    echo "提交检查已停止：前后台代码或检查配置尚未完全暂存。请先暂存要提交的文件，再提交。" >&2
+    exit 1
+fi
+
+exec bash scripts/check.sh --docker

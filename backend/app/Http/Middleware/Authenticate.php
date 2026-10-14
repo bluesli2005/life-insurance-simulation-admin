@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 /** 認証とアカウントの利用状態を確認する。 */
 class Authenticate extends Middleware
 {
+    /** @param string ...$guards */
     public function handle($request, Closure $next, ...$guards)
     {
         return parent::handle($request, function ($request) use ($next) {

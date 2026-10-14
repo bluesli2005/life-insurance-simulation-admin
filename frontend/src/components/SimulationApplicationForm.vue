@@ -75,7 +75,7 @@ export default {
     },
     data() {
         return {
-            form: this.emptyForm(),
+            form: /** @type {{emptyForm: () => Record<string, string>}} */ (/** @type {unknown} */ (this)).emptyForm(),
             requiredErrors: {},
             statusOptions: [
                 { value: 'draft', label: '下書き' },

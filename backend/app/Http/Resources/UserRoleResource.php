@@ -4,7 +4,11 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** ユーザー管理 API の利用者情報を同じ形式で返す。 */
+/**
+ * ユーザー管理 API の利用者情報を同じ形式で返す。
+ *
+ * @mixin \App\User
+ */
 class UserRoleResource extends JsonResource
 {
     public function toArray($request)

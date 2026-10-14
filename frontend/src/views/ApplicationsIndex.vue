@@ -79,7 +79,8 @@ export default {
             ],
         };
     },
-    computed: Object.assign({}, mapState(['applications', 'pagination', 'loading', 'error']), {
+    computed: {
+        ...mapState(['applications', 'pagination', 'loading', 'error']),
         canEdit() { return (this.$store.state.session || {}).can_write_applications; },
         currentPage() { return this.pagination.current_page || 1; },
         lastPage() { return this.pagination.last_page || 1; },
@@ -87,7 +88,7 @@ export default {
         total() { return this.pagination.total || 0; },
         from() { return this.pagination.from || 0; },
         to() { return this.pagination.to || 0; },
-    }),
+    },
     created() {
         this.loadCurrentPage();
     },

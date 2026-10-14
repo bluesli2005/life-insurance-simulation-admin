@@ -1,0 +1,17 @@
+<?php
+
+namespace Illuminate\Auth\Middleware;
+
+class Authenticate
+{
+    /**
+     * Laravel 6 incorrectly documents each variadic guard as an array.
+     * The router supplies individual guard names as strings.
+     *
+     * @param mixed $request
+     * @param \Closure $next
+     * @param string ...$guards
+     * @return mixed
+     */
+    public function handle($request, \Closure $next, ...$guards) {}
+}

@@ -16,6 +16,7 @@ class SimulationApplicationRequest extends FormRequest
 
     public function rules()
     {
+        /** @var SimulationApplication|null $application */
         $application = $this->route('simulation_application');
         // PATCH は送信項目だけを検証し、作成時は必須項目を要求する。
         $required = $this->isMethod('PATCH') ? 'sometimes' : 'required';

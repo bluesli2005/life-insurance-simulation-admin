@@ -81,3 +81,10 @@ API 统一为 `/api/v1`，使用 JSON、Session Cookie 和 CSRF。默认由 fron
 密码重置邮件链接由 `FRONTEND_URL` 控制，真实 SMTP 投递尚未验收。
 
 架构：[ARCHITECTURE.md](ARCHITECTURE.md)；目录：[PROJECT_FILES.md](PROJECT_FILES.md)；实施和验收记录：[DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)。
+
+
+## 提交检查与 CI
+
+启用本地提交检查：`git config --local core.hooksPath .githooks`。手动执行：`bash scripts/check.sh --docker`。
+
+提交前运行前后台类型/语法检查、Jest/PHPUnit 与 coverage；GitHub 在 main push、PR 时使用同一入口，PR 评论与 Actions Summary 显示覆盖率，Artifacts 提供 HTML 报告。配置与报告路径见 [CI.md](CI.md)。

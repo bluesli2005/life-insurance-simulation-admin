@@ -4,7 +4,11 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** 申込データを API 応答形式に変換する。 */
+/**
+ * 申込データを API 応答形式に変換する。
+ *
+ * @mixin \App\Models\SimulationApplication
+ */
 class SimulationApplicationResource extends JsonResource
 {
     public function toArray($request)

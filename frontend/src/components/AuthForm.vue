@@ -37,13 +37,26 @@
 <script>
 import client, { errorMessage } from '../api/client';
 
+/**
+ * @typedef {Object} AuthField
+ * @property {string} name
+ * @property {string | boolean} [value]
+ * @property {string} [type]
+ * @property {string} [label]
+ * @property {boolean} [required]
+ * @property {string} [autocomplete]
+ */
+
 export default {
     props: {
         title: { type: String, required: true },
         description: { type: String, default: '' },
         action: { type: String, required: true },
         submitLabel: { type: String, required: true },
-        fields: { type: Array, required: true },
+        fields: {
+            type: /** @type {import('vue').PropType<AuthField[]>} */ (Array),
+            required: true,
+        },
         links: { type: Array, default: () => [] },
         successMessage: { type: String, default: '' },
         clearOnSuccess: { type: Boolean, default: false },
