@@ -62,6 +62,20 @@ class SimulationApplicationsApiTest extends TestCase
             ->assertJsonPath('data.2.actor_user_id', auth()->id());
     }
 
+    public function test_create_ignores_fields_outside_the_validated_allowlist()
+    {
+        $created = $this->postJson('/api/v1/simulation-applications', array_merge($this->validPayload(), [
+            'id' => 999999,
+            'deleted_at' => now()->toDateTimeString(),
+        ]))->assertCreated()->json('data');
+
+        $this->assertNotSame(999999, $created['id']);
+        $this->assertDatabaseHas('simulation_applications', [
+            'id' => $created['id'],
+            'deleted_at' => null,
+        ]);
+    }
+
     public function test_audit_history_is_restricted_to_users_with_delete_permission()
     {
         $application = factory(SimulationApplication::class)->create();
@@ -155,6 +169,35 @@ class SimulationApplicationsApiTest extends TestCase
             ->assertJsonPath('meta.per_page', 10)
             ->assertJsonPath('data.0.application_number', 'SIM-SEARCH-001')
             ->assertJsonStructure(['data', 'meta' => ['current_page', 'last_page', 'total'], 'links' => ['first', 'last', 'prev', 'next']]);
+    }
+
+    public function test_search_treats_like_wildcards_as_literal_characters()
+    {
+        factory(SimulationApplication::class)->create([
+            'application_number' => 'SIM-LITERAL-001',
+            'notes' => 'Coverage is 100% guaranteed.',
+        ]);
+        factory(SimulationApplication::class)->create([
+            'application_number' => 'SIM-LITERAL-002',
+            'notes' => 'Coverage is guaranteed.',
+        ]);
+
+        $this->getJson('/api/v1/simulation-applications?search='.urlencode('%'))
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.application_number', 'SIM-LITERAL-001');
+    }
+
+    public function test_search_sql_injection_payload_is_treated_as_search_text()
+    {
+        factory(SimulationApplication::class)->create(['application_number' => 'SIM-SQL-001']);
+        factory(SimulationApplication::class)->create(['application_number' => 'SIM-SQL-002']);
+
+        $payload = "%' OR 1=1 --";
+        $this->getJson('/api/v1/simulation-applications?search='.urlencode($payload))
+            ->assertOk()
+            ->assertJsonPath('meta.total', 0)
+            ->assertJsonCount(0, 'data');
     }
 
     public function test_pagination_size_must_be_in_the_allowed_list()

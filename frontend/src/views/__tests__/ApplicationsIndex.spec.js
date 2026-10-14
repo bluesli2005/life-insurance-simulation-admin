@@ -88,6 +88,35 @@ describe('ApplicationsIndex', () => {
         ]);
     });
 
+    test('renders untrusted API text as text instead of executable HTML', () => {
+        const localVue = createLocalVue();
+        localVue.use(Vuex);
+        const payload = '<img src=x onerror=alert(1)>';
+        const store = new Vuex.Store({
+            state: {
+                session: null,
+                applications: [{
+                    id: 8,
+                    application_number: payload,
+                    applicant_name: '申込者',
+                    insured_name: '被保険者',
+                    coverage_amount: '1200',
+                    currency: 'JPY',
+                    status: 'draft',
+                    effective_date: '2026-10-10',
+                }],
+                pagination: {}, filters: { search: '', status: '' }, loading: false, error: '',
+            },
+            actions: { fetchApplications: jest.fn().mockResolvedValue() },
+        });
+        const wrapper = mount(ApplicationsIndex, {
+            localVue, store, stubs: { 'router-link': { template: '<a><slot /></a>' } },
+        });
+
+        expect(wrapper.find('tbody img').exists()).toBe(false);
+        expect(wrapper.find('tbody td').text()).toContain(payload);
+    });
+
     test('reset, page navigation, and page size send the intended list filters', async () => {
         const localVue = createLocalVue();
         localVue.use(Vuex);

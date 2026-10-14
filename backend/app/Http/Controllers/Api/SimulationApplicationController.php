@@ -13,6 +13,15 @@ use Illuminate\Support\Facades\DB;
 /** 保険申込の検索・登録・更新・削除と監査履歴を扱う。 */
 class SimulationApplicationController extends Controller
 {
+    /** whereRaw の列名として利用できる検索対象を固定する。 */
+    const SEARCHABLE_COLUMNS = [
+        'application_number',
+        'applicant_name',
+        'insured_name',
+        'beneficiary_name',
+        'notes',
+    ];
+
     public function index(SimulationApplicationIndexRequest $request)
     {
         $filters = $request->validated();
@@ -20,10 +29,13 @@ class SimulationApplicationController extends Controller
 
         if (! empty($filters['search'])) {
             $term = $filters['search'];
+            // LIKE のワイルドカードをエスケープし、利用者入力を文字列として検索する。
+            $term = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term);
             // 複数項目の OR 条件をまとめ、ステータス条件とは AND で組み合わせる。
             $query->where(function ($query) use ($term) {
-                foreach (['application_number', 'applicant_name', 'insured_name', 'beneficiary_name', 'notes'] as $column) {
-                    $query->orWhere($column, 'like', '%'.$term.'%');
+                foreach (self::SEARCHABLE_COLUMNS as $column) {
+                    // 列名は固定リスト内のみ。検索値は常にバインドする。
+                    $query->orWhereRaw($column." LIKE ? ESCAPE '!'", ['%'.$term.'%']);
                 }
             });
         }

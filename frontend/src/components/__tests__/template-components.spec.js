@@ -29,6 +29,11 @@ describe('template components', () => {
         await wrapper.setProps({ message: '入力内容を確認してください。' });
         expect(wrapper.text()).toBe('入力内容を確認してください。');
         expect(wrapper.attributes('role')).toBe('alert');
+
+        const untrustedMessage = '<img src=x onerror=alert(1)>';
+        await wrapper.setProps({ message: untrustedMessage });
+        expect(wrapper.find('img').exists()).toBe(false);
+        expect(wrapper.text()).toBe(untrustedMessage);
     });
 
     test('BaseInput applies constraints and emits typed input values', async () => {
