@@ -34,6 +34,48 @@
 
 根目录迁移前的空目录已移除。未使用的 coverage 与 storybook-static 已清理；命令会在各端目录重新生成它们。当前 frontend/dist、依赖目录、后端运行目录及必要框架配置保留，不按“空目录”批量删除。
 
+## backend/app 文件职责
+
+以下职责于 2026-10-13 按实际源码核对。`backend/app/` 当前有 35 个 PHP 文件；下表路径均相对于该目录。
+
+| 文件 | 职责 |
+| --- | --- |
+| `Console/Kernel.php` | 注册 Artisan 命令和定时任务；当前未定义项目专属定时任务，从 `routes/console.php` 加载控制台命令。 |
+| `Exceptions/Handler.php` | 将异常记录并转换为 HTTP 响应；继承 Laravel 默认处理，并避免在验证失败的会话数据中保留密码。 |
+| `Http/Controllers/Api/AdminSessionController.php` | 返回当前登录用户的基本信息、角色和操作权限。 |
+| `Http/Controllers/Api/SimulationApplicationController.php` | 处理申込列表、详情、新增、修改、软删除和审计历史；写入时记录操作人及变更前后数据。 |
+| `Http/Controllers/Api/UserRoleController.php` | 查询用户与角色，修改用户角色或状态；阻止取消受保护管理员的权限，以及删除自己等操作。 |
+| `Http/Controllers/Auth/Concerns/FormatsPasswordBrokerResponses.php` | 共用密码找回和重置的 Password Broker 成功／失败 JSON 响应格式及错误状态码。 |
+| `Http/Controllers/Auth/ChangePasswordController.php` | 校验旧密码并更新当前用户密码，同时更新 remember token、清除密码再确认状态。 |
+| `Http/Controllers/Auth/ConfirmPasswordController.php` | 处理敏感操作前的密码再确认，并更新会话中的确认时间。 |
+| `Http/Controllers/Auth/ForgotPasswordController.php` | 为有效账户发送密码重置邮件，并将成功或错误结果转换为 JSON。 |
+| `Http/Controllers/Auth/LoginController.php` | 使用 Laravel 认证 trait 处理登录和退出；只允许有效账户登录，成功时返回无内容响应。 |
+| `Http/Controllers/Auth/RegisterController.php` | 校验注册信息、创建默认拥有查看者角色的用户，并返回 JSON 结果。 |
+| `Http/Controllers/Auth/ResetPasswordController.php` | 使用重置 token 更新有效账户的密码，并将处理结果转换为 JSON。 |
+| `Http/Controllers/Auth/VerificationController.php` | 保留 Laravel 邮箱验证处理入口；其 `show` 方法返回当前不提供邮箱验证页面的 404 响应。 |
+| `Http/Controllers/Controller.php` | 所有项目 Controller 的基类，提供授权、任务分发和请求验证能力。 |
+| `Http/Kernel.php` | 注册全局中间件、`web`／`session.api` 中间件组，以及 `auth`、`can` 等路由中间件。 |
+| `Http/Middleware/ApiCors.php` | 检查请求来源和预检请求，添加 CORS／禁用缓存响应头，并让异常响应也带上 CORS 信息。 |
+| `Http/Middleware/Authenticate.php` | 检查登录状态及账户是否仍有效；无效账户会退出当前会话。 |
+| `Http/Middleware/CheckForMaintenanceMode.php` | 配置维护模式下仍可访问的 URI；当前未设置例外路径。 |
+| `Http/Middleware/EncryptCookies.php` | 配置不加密的 Cookie 名称；当前未设置例外 Cookie。 |
+| `Http/Middleware/RedirectIfAuthenticated.php` | 阻止已登录用户访问访客专用 API，返回 409 JSON 响应。 |
+| `Http/Middleware/TrimStrings.php` | 清理输入字符串两端空白，但不处理密码和密码确认字段。 |
+| `Http/Middleware/TrustProxies.php` | 配置代理转发请求头的识别方式。 |
+| `Http/Middleware/VerifyCsrfToken.php` | 校验会话 API 的 CSRF token、提供 XSRF-TOKEN Cookie，并把无法解密的 token 视为无效。 |
+| `Http/Requests/SimulationApplicationIndexRequest.php` | 校验申込列表的搜索词、状态和分页参数。 |
+| `Http/Requests/SimulationApplicationRequest.php` | 校验申込新增／修改字段，包括唯一编号、日期范围、金额和状态；PATCH 允许只提交变更字段。 |
+| `Http/Resources/SimulationApplicationResource.php` | 将申込模型转换为统一的 API JSON 字段和日期格式。 |
+| `Http/Resources/UserRoleResource.php` | 将用户管理列表、角色修改和状态修改中的用户字段转换为统一的 API JSON 格式。 |
+| `Models/SimulationApplication.php` | 定义申込模型的可批量写入字段、类型转换、状态值及软删除行为。 |
+| `Providers/AppServiceProvider.php` | 配置密码重置邮件的日文内容及指向前端的重置链接。 |
+| `Providers/AuthServiceProvider.php` | 定义申请写入、删除和用户管理三个 Gate，依据角色权限标志判定。 |
+| `Providers/BroadcastServiceProvider.php` | 定义广播路由与频道文件的加载；目前在 `config/app.php` 中未启用。 |
+| `Providers/EventServiceProvider.php` | 注册应用事件与监听器，包括注册事件对应的邮箱验证通知监听器。 |
+| `Providers/RouteServiceProvider.php` | 注册 Web 路由及带 Session／CSRF 的 `/api` 路由，并设置 Controller 命名空间。 |
+| `Role.php` | 定义角色模型及申请写入、删除、用户管理权限标志的布尔类型转换。 |
+| `User.php` | 定义用户模型、角色和账户状态常量、可写与隐藏字段，以及与角色的关联。 |
+
 ## 当前维护文件清单
 
 ```text
@@ -54,6 +96,7 @@ backend/app/Exceptions/Handler.php
 backend/app/Http/Controllers/Api/AdminSessionController.php
 backend/app/Http/Controllers/Api/SimulationApplicationController.php
 backend/app/Http/Controllers/Api/UserRoleController.php
+backend/app/Http/Controllers/Auth/Concerns/FormatsPasswordBrokerResponses.php
 backend/app/Http/Controllers/Auth/ChangePasswordController.php
 backend/app/Http/Controllers/Auth/ConfirmPasswordController.php
 backend/app/Http/Controllers/Auth/ForgotPasswordController.php
@@ -74,6 +117,7 @@ backend/app/Http/Middleware/VerifyCsrfToken.php
 backend/app/Http/Requests/SimulationApplicationIndexRequest.php
 backend/app/Http/Requests/SimulationApplicationRequest.php
 backend/app/Http/Resources/SimulationApplicationResource.php
+backend/app/Http/Resources/UserRoleResource.php
 backend/app/Models/SimulationApplication.php
 backend/app/Providers/AppServiceProvider.php
 backend/app/Providers/AuthServiceProvider.php

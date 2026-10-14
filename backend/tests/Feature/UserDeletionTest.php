@@ -70,6 +70,18 @@ class UserDeletionTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_reserved_admin_cannot_be_deactivated_by_another_super_admin()
+    {
+        $reserved = $this->createUser('admin@example.com', User::ROLE_SUPER_ADMIN);
+        $other = $this->createUser('other@example.com', User::ROLE_SUPER_ADMIN);
+
+        $this->actingAs($other)
+            ->patchJson('/api/v1/users/'.$reserved->id.'/status', ['status' => User::STATUS_DELETED])
+            ->assertStatus(422);
+
+        $this->assertSame(User::STATUS_ACTIVE, $reserved->fresh()->status);
+    }
+
     public function test_deleted_user_cannot_log_in_or_use_an_existing_session()
     {
         $viewer = $this->createUser('viewer@example.com', User::ROLE_VIEWER);

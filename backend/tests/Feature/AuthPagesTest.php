@@ -71,6 +71,17 @@ class AuthPagesTest extends TestCase
             ->assertJsonPath('errors.email.0', 'このメールアドレスのユーザーが見つかりません。');
     }
 
+    public function test_repeated_password_reset_email_returns_a_japanese_throttle_error()
+    {
+        Notification::fake();
+        $user = $this->createUser();
+
+        $this->postJson('/api/v1/auth/password/email', ['email' => $user->email])->assertOk();
+        $this->postJson('/api/v1/auth/password/email', ['email' => $user->email])
+            ->assertStatus(429)
+            ->assertJsonPath('errors.email.0', 'しばらく待ってから、もう一度お試しください。');
+    }
+
     public function test_password_reset_updates_the_password()
     {
         $user = $this->createUser();

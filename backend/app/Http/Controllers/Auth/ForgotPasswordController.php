@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\Concerns\FormatsPasswordBrokerResponses;
 use App\User;
 use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
 use Illuminate\Http\Request;
-use Illuminate\Contracts\Auth\PasswordBroker as PasswordBrokerContract;
 
 /** パスワード再設定メールの送信を扱う。 */
 class ForgotPasswordController extends Controller
@@ -23,6 +23,7 @@ class ForgotPasswordController extends Controller
     */
 
     use SendsPasswordResetEmails;
+    use FormatsPasswordBrokerResponses;
 
 
     protected function credentials(Request $request)
@@ -32,13 +33,11 @@ class ForgotPasswordController extends Controller
 
     protected function sendResetLinkResponse(Request $request, $response)
     {
-        return response()->json(['message' => trans($response)]);
+        return $this->passwordBrokerSuccessResponse($response);
     }
 
     protected function sendResetLinkFailedResponse(Request $request, $response)
     {
-        return response()->json([
-            'errors' => ['email' => [trans($response)]],
-        ], $response === PasswordBrokerContract::RESET_THROTTLED ? 429 : 422);
+        return $this->passwordBrokerFailedResponse($response);
     }
 }

@@ -19,7 +19,7 @@ class RedirectIfAuthenticated
     public function handle($request, Closure $next, $guard = null)
     {
         if (Auth::guard($guard)->check()) {
-            return response()->json(['message' => 'すでにログインしています。'], 409);
+            return response()->json(['message' => __('errors.api.already_authenticated')], 409);
         }
 
         return $next($request);

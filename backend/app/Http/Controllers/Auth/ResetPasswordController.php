@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\Concerns\FormatsPasswordBrokerResponses;
 use App\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
-use Illuminate\Contracts\Auth\PasswordBroker as PasswordBrokerContract;
 
 /** 再設定トークンを使ったパスワード更新を扱う。 */
 class ResetPasswordController extends Controller
@@ -24,6 +24,7 @@ class ResetPasswordController extends Controller
     */
 
     use ResetsPasswords;
+    use FormatsPasswordBrokerResponses;
 
     /**
      * Where to redirect users after resetting their password.
@@ -41,13 +42,11 @@ class ResetPasswordController extends Controller
 
     protected function sendResetResponse(Request $request, $response)
     {
-        return response()->json(['message' => trans($response)]);
+        return $this->passwordBrokerSuccessResponse($response);
     }
 
     protected function sendResetFailedResponse(Request $request, $response)
     {
-        return response()->json([
-            'errors' => ['email' => [trans($response)]],
-        ], $response === PasswordBrokerContract::RESET_THROTTLED ? 429 : 422);
+        return $this->passwordBrokerFailedResponse($response);
     }
 }

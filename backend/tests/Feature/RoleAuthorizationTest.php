@@ -68,6 +68,18 @@ class RoleAuthorizationTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_reserved_admin_cannot_be_demoted_when_another_super_admin_exists()
+    {
+        $reserved = $this->createUser('admin@example.com', User::ROLE_SUPER_ADMIN);
+        $other = $this->createUser('other@example.com', User::ROLE_SUPER_ADMIN);
+
+        $this->actingAs($other)
+            ->patchJson('/api/v1/users/'.$reserved->id.'/role', ['role' => User::ROLE_EDITOR])
+            ->assertStatus(422);
+
+        $this->assertSame(User::ROLE_SUPER_ADMIN, $reserved->fresh()->role->code);
+    }
+
     public function test_authorization_reads_permission_flags_from_roles_table()
     {
         $editor = $this->createUser('editor@example.com', User::ROLE_EDITOR);

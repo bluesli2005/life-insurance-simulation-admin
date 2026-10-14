@@ -20,7 +20,7 @@ class Authenticate extends Middleware
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
-                return response()->json(['message' => 'このアカウントは利用できません。'], 401);
+                return response()->json(['message' => __('errors.api.account_unavailable')], 401);
             }
 
             return $next($request);

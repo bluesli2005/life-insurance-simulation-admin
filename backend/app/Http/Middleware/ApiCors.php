@@ -16,7 +16,7 @@ class ApiCors
         $origin = $request->header('Origin');
         $allowed = config('cors.allowed_origins');
         if ($origin && ! in_array($origin, $allowed, true)) {
-            return response()->json(['message' => 'この接続元は許可されていません。'], 403);
+            return response()->json(['message' => __('errors.api.origin_not_allowed')], 403);
         }
 
         if ($request->isMethod('OPTIONS')) {
@@ -25,7 +25,7 @@ class ApiCors
             $headers = array_filter(array_map('trim', explode(',', strtolower($request->header('Access-Control-Request-Headers', '')))));
             $valid = $origin && in_array($method, config('cors.allowed_methods'), true)
                 && ! array_diff($headers, config('cors.allowed_headers'));
-            $response = $valid ? response()->noContent() : response()->json(['message' => '無効なプリフライト要求です。'], 403);
+            $response = $valid ? response()->noContent() : response()->json(['message' => __('errors.api.invalid_preflight')], 403);
         } else {
             try {
                 $response = $next($request);

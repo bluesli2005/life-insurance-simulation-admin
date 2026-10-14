@@ -32,7 +32,7 @@ class VerificationController extends Controller
 
     public function show(Request $request)
     {
-        return response()->json(['message' => 'メール確認は利用できません。'], 404);
+        return response()->json(['message' => __('errors.api.email_verification_unavailable')], 404);
     }
 
     /**
